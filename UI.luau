@@ -3120,16 +3120,6 @@ getgenv().Library = {
         return setmetatable(Cfg, Library)
     end
 
-    Library.AddButton = function(self, Data)
-    Data = Data or {}
-
-    local Cfg = {
-        Text = Data.Text or "Button";
-        Callback = Data.Callback or function() end;
-
-        Items = {}
-    }
-
 Library.AddButton = function(self, Data)
     Data = Data or {}
 
