@@ -38,7 +38,7 @@ local function Script(Url)
 
         warn(result)
     end
-end)
+end
 
 ScriptsTab:AddButton({
     Text = "Last Letter | Auto Typer",
