@@ -2,7 +2,7 @@ local cloneref = cloneref or function(x) return x end
 
 local UserInputService = cloneref(game:GetService("UserInputService"))
 
-local Library = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/realheckersbrother/UnpackedHub/refs/heads/main/UI.luau", true))()
+local Library = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/UI.luau", true))()
 
 local MainWindow = Library:CreateWindow({
     Title = "Unpacked Hub",
@@ -43,7 +43,7 @@ end)
 ScriptsTab:AddButton({
     Text = "Last Letter | Auto Typer",
     Callback = function()
-        Script("https://raw.githubusercontent.com/realheckersbrother/UnpackedHub/refs/heads/main/Scripts/LastLetterAutoTyper.luau")
+        Script("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/LastLetterAutoTyper.luau")
     end
 })
 
