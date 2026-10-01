@@ -3121,113 +3121,127 @@ getgenv().Library = {
     end
 
     Library.AddButton = function(self, Data)
-        Data = Data or {}
+    Data = Data or {}
 
-        local Cfg = {
-            Text = Data.Text or "Button";
-            Callback = Data.Callback or function() end;
+    local Cfg = {
+        Text = Data.Text or "Button";
+        Callback = Data.Callback or function() end;
 
-            Items = {}
-        }
+        Items = {}
+    }
 
-        local Items = Cfg.Items; do
-            Items.ButtonHolder = self.Items and self.Items.ButtonHolder
+    local Items = Cfg.Items; do
+        Items.ButtonHolder = self.Items and self.Items.ButtonHolder
 
-            if not Items.ButtonHolder and self.Items.Elements.Instance then
-                Items.ButtonHolder = Library:Create( "Frame", {
-                    Parent = self.Items.Elements.Instance;
+        if not Items.ButtonHolder then
+            local Elements = self.Items and self.Items.Elements
+
+            if Elements and Elements.Instance then
+                Items.ButtonHolder = Library:Create("Frame", {
+                    Parent = Elements.Instance;
                     BackgroundTransparency = 1;
                     Size = UDim2.new(1, 0, 0, 24);
                     BorderSizePixel = 0
                 })
 
-                Library:Create( "UIListLayout", {
-                    FillDirection = Enum.FillDirection.Horizontal;
-                    HorizontalFlex = Enum.UIFlexAlignment.Fill;
-                    Parent = Items.ButtonHolder.Instance;
-                    Padding = UDim.new(0, 13);
-                    SortOrder = Enum.SortOrder.LayoutOrder
-                })
+                if Items.ButtonHolder and Items.ButtonHolder.Instance then
+                    Library:Create("UIListLayout", {
+                        FillDirection = Enum.FillDirection.Horizontal;
+                        HorizontalFlex = Enum.UIFlexAlignment.Fill;
+                        Parent = Items.ButtonHolder.Instance;
+                        Padding = UDim.new(0, 13);
+                        SortOrder = Enum.SortOrder.LayoutOrder
+                    })
+                end
             end
+        end
 
-            Items.Outline = Library:Create( "TextButton", {
-                Parent = Items.ButtonHolder.Instance;
-                Position = UDim2.new(0, 1, 0, 0);
-                Size = UDim2.new(1, -1, 0, 24);
-                BorderSizePixel = 0;
-                BackgroundColor3 = Themes.Preset["ElementBackground"]
-            }):Themify("ElementBackground", "BackgroundColor3")
+        if not Items.ButtonHolder or not Items.ButtonHolder.Instance then
+            error("Library.AddButton: Failed to create ButtonHolder")
+        end
 
-            Library:Create( "UIStroke", {
-                Color = Themes.Preset.ElementOutline;
-                Parent = Items.Outline.Instance
-            }):Themify("ElementOutline", "Color")
+        Items.Outline = Library:Create("TextButton", {
+            Parent = Items.ButtonHolder.Instance;
+            Position = UDim2.new(0, 1, 0, 0);
+            Size = UDim2.new(1, -1, 0, 24);
+            BorderSizePixel = 0;
+            BackgroundColor3 = Themes.Preset["ElementBackground"]
+        }):Themify("ElementBackground", "BackgroundColor3")
 
-            Library:Create( "UICorner", {
-                Parent = Items.Outline.Instance;
-                CornerRadius = UDim.new(0, 5)
-            })
+        Library:Create("UIStroke", {
+            Color = Themes.Preset.ElementOutline;
+            Parent = Items.Outline.Instance
+        }):Themify("ElementOutline", "Color")
 
-            Library:Create( "TextLabel", {
-                FontFace = Themes.Preset.Font;
-                TextColor3 = Color3.fromRGB(252, 252, 252);
-                Text = Cfg.Text;
-                Parent = Items.Outline.Instance;
-                AutomaticSize = Enum.AutomaticSize.XY;
-                BackgroundTransparency = 1;
-                Size = UDim2.new(1, 0, 1, 0);
-                BorderSizePixel = 0;
-                Position = UDim2.new(0, 0, 0, -1);
-                ZIndex = 2;
-                BackgroundColor3 = Themes.Preset["Accent"]
-            }):Themify("Accent", "BackgroundColor3")
+        Library:Create("UICorner", {
+            Parent = Items.Outline.Instance;
+            CornerRadius = UDim.new(0, 5)
+        })
 
-            Items.Accent = Library:Create( "Frame", {
-                Parent = Items.Outline.Instance;
-                BackgroundTransparency = 1;
-                Size = UDim2.new(1, 0, 1, 0);
-                BorderSizePixel = 0;
-                BackgroundColor3 = Themes.Preset["Accent"]
-            }):Themify("Accent", "BackgroundColor3")
+        Library:Create("TextLabel", {
+            FontFace = Themes.Preset.Font;
+            TextColor3 = Color3.fromRGB(252, 252, 252);
+            Text = Cfg.Text;
+            Parent = Items.Outline.Instance;
+            AutomaticSize = Enum.AutomaticSize.XY;
+            BackgroundTransparency = 1;
+            Size = UDim2.new(1, 0, 1, 0);
+            BorderSizePixel = 0;
+            Position = UDim2.new(0, 0, 0, -1);
+            ZIndex = 2;
+            BackgroundColor3 = Themes.Preset["Accent"]
+        }):Themify("Accent", "BackgroundColor3")
 
-            Items.Stroke = Library:Create( "UIStroke", {
-                Color = Themes.Preset["Accent"];
-                Transparency = 1;
-                Parent = Items.Accent.Instance
-            }):Themify("Accent", "Color")
+        Items.Accent = Library:Create("Frame", {
+            Parent = Items.Outline.Instance;
+            BackgroundTransparency = 1;
+            Size = UDim2.new(1, 0, 1, 0);
+            BorderSizePixel = 0;
+            BackgroundColor3 = Themes.Preset["Accent"]
+        }):Themify("Accent", "BackgroundColor3")
 
-            Library:Create( "UIGradient", {
-                Parent = Items.Accent.Instance;
-                Transparency = NumberSequence.new{
-                NumberSequenceKeypoint.new(0, 0.59375),
+        Items.Stroke = Library:Create("UIStroke", {
+            Color = Themes.Preset["Accent"];
+            Transparency = 1;
+            Parent = Items.Accent.Instance
+        }):Themify("Accent", "Color")
+
+        Library:Create("UIGradient", {
+            Parent = Items.Accent.Instance;
+            Transparency = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 0.59375);
                 NumberSequenceKeypoint.new(1, 0)
             }
-            })
+        })
 
-            Library:Create( "UICorner", {
-                Parent = Items.Accent.Instance;
-                CornerRadius = UDim.new(0, 5)
-            })
-        end
-
-        Cfg.Press = function()
-            Items.Accent.Instance.BackgroundTransparency = 0
-            Items.Accent:Tween({BackgroundTransparency = 1})
-
-            Items.Stroke.Instance.Transparency = 0
-            Items.Stroke:Tween({Transparency = 1})
-
-            Cfg.Callback()
-        end
-
-        Items.Outline:OnClick(Cfg.Press)
-
-        if self.UpdateSection then
-            self.UpdateSection(Items.ButtonHolder.Instance)
-        end
-
-        return setmetatable(Cfg, Library)
+        Library:Create("UICorner", {
+            Parent = Items.Accent.Instance;
+            CornerRadius = UDim.new(0, 5)
+        })
     end
+
+    Cfg.Press = function()
+        Items.Accent.Instance.BackgroundTransparency = 0
+        Items.Accent:Tween({
+            BackgroundTransparency = 1
+        })
+
+        Items.Stroke.Instance.Transparency = 0
+        Items.Stroke:Tween({
+            Transparency = 1
+        })
+
+        Cfg.Callback()
+    end
+
+    Items.Outline:OnClick(Cfg.Press)
+
+    if self.UpdateSection and Items.ButtonHolder and Items.ButtonHolder.Instance then
+        self.UpdateSection(Items.ButtonHolder.Instance)
+    end
+
+    return setmetatable(Cfg, Library)
+end
 
     Library.AddLabel = function(self, Data)
         local Cfg = {
