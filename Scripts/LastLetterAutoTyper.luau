@@ -1,6 +1,3 @@
---[[
-	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
-]]
 if not game.IsLoaded then
     game.Loaded:Wait()
 end
