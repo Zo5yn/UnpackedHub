@@ -3126,125 +3126,117 @@ Library.AddButton = function(self, Data)
     local Cfg = {
         Text = Data.Text or "Button";
         Callback = Data.Callback or function() end;
-
         Items = {}
     }
 
-    local Items = Cfg.Items; do
-        Items.ButtonHolder = self.Items and self.Items.ButtonHolder
+    local Items = Cfg.Items
 
-        if not Items.ButtonHolder then
-            local Elements = self.Items and self.Items.Elements
-            local ElementsInstance = Elements and Elements.Instance
+    local Elements = self.Items and self.Items.Elements
+    local ElementsInstance = Elements and Elements.Instance
 
-            if ElementsInstance then
-                Items.ButtonHolder = Library:Create("Frame", {
-                    Parent = ElementsInstance;
-                    BackgroundTransparency = 1;
-                    Size = UDim2.new(1, 0, 0, 24);
-                    BorderSizePixel = 0
-                })
-
-                local ButtonHolderInstance = Items.ButtonHolder and Items.ButtonHolder.Instance
-
-                if ButtonHolderInstance then
-                    Library:Create("UIListLayout", {
-                        FillDirection = Enum.FillDirection.Horizontal;
-                        HorizontalFlex = Enum.UIFlexAlignment.Fill;
-                        Parent = ButtonHolderInstance;
-                        Padding = UDim.new(0, 13);
-                        SortOrder = Enum.SortOrder.LayoutOrder
-                    })
-                end
-            end
-        end
-
-        local ButtonHolderInstance = Items.ButtonHolder and Items.ButtonHolder.Instance
-
-        if not ButtonHolderInstance then
-            error("Library.AddButton: ButtonHolder.Instance is nil")
-        end
-
-        Items.Outline = Library:Create("TextButton", {
-            Parent = ButtonHolderInstance;
-            Position = UDim2.new(0, 1, 0, 0);
-            Size = UDim2.new(1, -1, 0, 24);
-            BorderSizePixel = 0;
-            BackgroundColor3 = Themes.Preset["ElementBackground"]
-        })
-
-        if not Items.Outline then
-            error("Library.AddButton: failed to create Outline")
-        end
-
-        local OutlineInstance = Items.Outline.Instance
-
-        if not OutlineInstance then
-            error("Library.AddButton: Outline.Instance is nil")
-        end
-
-        Items.Outline = Items.Outline:Themify(
-            "ElementBackground",
-            "BackgroundColor3"
-        )
-
-        Library:Create("UIStroke", {
-            Color = Themes.Preset.ElementOutline;
-            Parent = OutlineInstance
-        }):Themify("ElementOutline", "Color")
-
-        Library:Create("UICorner", {
-            Parent = OutlineInstance;
-            CornerRadius = UDim.new(0, 5)
-        })
-
-        Library:Create("TextLabel", {
-            FontFace = Themes.Preset.Font;
-            TextColor3 = Color3.fromRGB(252, 252, 252);
-            Text = Cfg.Text;
-            Parent = OutlineInstance;
-            AutomaticSize = Enum.AutomaticSize.XY;
-            BackgroundTransparency = 1;
-            Size = UDim2.new(1, 0, 1, 0);
-            BorderSizePixel = 0;
-            Position = UDim2.new(0, 0, 0, -1);
-            ZIndex = 2;
-            BackgroundColor3 = Themes.Preset["Accent"]
-        }):Themify("Accent", "BackgroundColor3")
-
-        Items.Accent = Library:Create("Frame", {
-            Parent = OutlineInstance;
-            BackgroundTransparency = 1;
-            Size = UDim2.new(1, 0, 1, 0);
-            BorderSizePixel = 0;
-            BackgroundColor3 = Themes.Preset["Accent"]
-        }):Themify("Accent", "BackgroundColor3")
-
-        local AccentInstance = Items.Accent and Items.Accent.Instance
-
-        if not AccentInstance then
-            error("Library.AddButton: Accent.Instance is nil")
-        end
-
-        Items.Stroke = Library:Create("UIStroke", {
-            Color = Themes.Preset["Accent"];
-            Transparency = 1;
-            Parent = AccentInstance
-        }):Themify("Accent", "Color")
-
-        Library:Create("UIGradient", {
-            Parent = AccentInstance;
-            Transparency = NumberSequence.new{
-                NumberSequenceKeypoint.new(0, 0.59375);
-                NumberSequenceKeypoint.new(1, 0)
-            }
-        })
-
-        Library:Create("UICorner", {
-            Parent = AccentInstance;
-            CornerRadius = UDim.new(0, 5)
-        })
+    if not ElementsInstance then
+        error("Library.AddButton: self.Items.Elements.Instance is nil")
     end
+
+    Items.Outline = Library:Create("TextButton", {
+        Parent = ElementsInstance;
+        Position = UDim2.new(0, 1, 0, 0);
+        Size = UDim2.new(1, -1, 0, 24);
+        BorderSizePixel = 0;
+        BackgroundColor3 = Themes.Preset["ElementBackground"]
+    }):Themify("ElementBackground", "BackgroundColor3")
+
+    local OutlineInstance = Items.Outline and Items.Outline.Instance
+
+    if not OutlineInstance then
+        error("Library.AddButton: Outline.Instance is nil")
+    end
+
+    Library:Create("UIStroke", {
+        Color = Themes.Preset.ElementOutline;
+        Parent = OutlineInstance
+    }):Themify("ElementOutline", "Color")
+
+    Library:Create("UICorner", {
+        Parent = OutlineInstance;
+        CornerRadius = UDim.new(0, 5)
+    })
+
+    Library:Create("TextLabel", {
+        FontFace = Themes.Preset.Font;
+        TextColor3 = Color3.fromRGB(252, 252, 252);
+        Text = Cfg.Text;
+        Parent = OutlineInstance;
+        AutomaticSize = Enum.AutomaticSize.XY;
+        BackgroundTransparency = 1;
+        Size = UDim2.new(1, 0, 1, 0);
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 0, 0, -1);
+        ZIndex = 2
+    })
+
+    Items.Accent = Library:Create("Frame", {
+        Parent = OutlineInstance;
+        BackgroundTransparency = 1;
+        Size = UDim2.new(1, 0, 1, 0);
+        BorderSizePixel = 0;
+        BackgroundColor3 = Themes.Preset["Accent"]
+    }):Themify("Accent", "BackgroundColor3")
+
+    local AccentInstance = Items.Accent and Items.Accent.Instance
+
+    if not AccentInstance then
+        error("Library.AddButton: Accent.Instance is nil")
+    end
+
+    Items.Stroke = Library:Create("UIStroke", {
+        Color = Themes.Preset["Accent"];
+        Transparency = 1;
+        Parent = AccentInstance
+    }):Themify("Accent", "Color")
+
+    Library:Create("UIGradient", {
+        Parent = AccentInstance;
+        Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.59375);
+            NumberSequenceKeypoint.new(1, 0)
+        }
+    })
+
+    Library:Create("UICorner", {
+        Parent = AccentInstance;
+        CornerRadius = UDim.new(0, 5)
+    })
+
+    Cfg.Press = function()
+        local Accent = Items.Accent and Items.Accent.Instance
+        local Stroke = Items.Stroke and Items.Stroke.Instance
+
+        if Accent then
+            Accent.BackgroundTransparency = 0
+            Items.Accent:Tween({
+                BackgroundTransparency = 1
+            })
+        end
+
+        if Stroke then
+            Stroke.Transparency = 0
+            Items.Stroke:Tween({
+                Transparency = 1
+            })
+        end
+
+        Cfg.Callback()
+    end
+
+    Items.Outline:OnClick(Cfg.Press)
+
+    if self.UpdateSection then
+        self.UpdateSection(OutlineInstance)
+    end
+
+    return setmetatable(Cfg, Library)
+end
 
     Cfg.Press = function()
         local AccentInstance = Items.Accent and Items.Accent.Instance
