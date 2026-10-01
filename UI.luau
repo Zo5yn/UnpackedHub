@@ -463,7 +463,8 @@ getgenv().Library = {
         local EnumTable = tostring(enum)
 
         for i = 2, #EnumParts do
-            local EnumItem = EnumTable[EnumParts[i]]
+            local EnumKey = EnumParts[i]
+            local EnumItem = EnumTable[EnumKey]
 
             EnumTable = EnumItem
         end
@@ -3119,7 +3120,6 @@ getgenv().Library = {
 
         return setmetatable(Cfg, Library)
     end
-
 Library.AddButton = function(self, Data)
     Data = Data or {}
 
@@ -3131,15 +3131,15 @@ Library.AddButton = function(self, Data)
 
     local Items = Cfg.Items
 
-    local Elements = self.Items and self.Items.Elements
-    local ElementsInstance = Elements and Elements.Instance
+    local Page = self.Items and self.Items.Page
+    local PageInstance = Page and Page.Instance
 
-    if not ElementsInstance then
-        error("Library.AddButton: self.Items.Elements.Instance is nil")
+    if not PageInstance then
+        error("Library.AddButton: self.Items.Page.Instance is nil")
     end
 
     Items.Outline = Library:Create("TextButton", {
-        Parent = ElementsInstance;
+        Parent = PageInstance;
         Position = UDim2.new(0, 1, 0, 0);
         Size = UDim2.new(1, -1, 0, 24);
         BorderSizePixel = 0;
@@ -3233,40 +3233,6 @@ Library.AddButton = function(self, Data)
 
     if self.UpdateSection then
         self.UpdateSection(OutlineInstance)
-    end
-
-    return setmetatable(Cfg, Library)
-end
-
-    Cfg.Press = function()
-        local AccentInstance = Items.Accent and Items.Accent.Instance
-        local StrokeInstance = Items.Stroke and Items.Stroke.Instance
-
-        if AccentInstance then
-            AccentInstance.BackgroundTransparency = 0
-            Items.Accent:Tween({
-                BackgroundTransparency = 1
-            })
-        end
-
-        if StrokeInstance then
-            StrokeInstance.Transparency = 0
-            Items.Stroke:Tween({
-                Transparency = 1
-            })
-        end
-
-        Cfg.Callback()
-    end
-
-    Items.Outline:OnClick(Cfg.Press)
-
-    if self.UpdateSection then
-        local ButtonHolderInstance = Items.ButtonHolder and Items.ButtonHolder.Instance
-
-        if ButtonHolderInstance then
-            self.UpdateSection(ButtonHolderInstance)
-        end
     end
 
     return setmetatable(Cfg, Library)
