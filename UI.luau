@@ -3133,7 +3133,7 @@ getgenv().Library = {
         local Items = Cfg.Items; do
             Items.ButtonHolder = self.Items and self.Items.ButtonHolder
 
-            if not Items.ButtonHolde and self.Items.Elements.Instance then
+            if not Items.ButtonHolder and self.Items.Elements.Instance then
                 Items.ButtonHolder = Library:Create( "Frame", {
                     Parent = self.Items.Elements.Instance;
                     BackgroundTransparency = 1;
