@@ -17899,7 +17899,6 @@ arg:AddToggle({
             queue_on_teleport([[local src = (pcall(function() return game:HttpGetAsync("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true) end) and game:HttpGetAsync("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true)) or game:HttpGet("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true); local fn, err = loadstring(src); if err then error(err) end; if fn then fn() end]])
         end
     end
-end
 })
 local stateData = arg2:GetStateData()
 
