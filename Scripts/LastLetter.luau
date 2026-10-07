@@ -2,6 +2,64 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
+Configuration = Configuration or {
+    -- Whether to prefer shorter words when multiple words match.
+    -- true = shorter words
+    -- false = longer words
+    useShortestWords = true,
+
+    -- Notification system to use.
+    -- "Akali" = Akali notification library
+    -- Anything else = Roblox's built-in notifications
+    notificationLibrary = "Akali",
+
+    -- Base delay between typing each letter.
+    -- 0.01 = 10 milliseconds.
+    typingSpeed = 0.01,
+
+    -- Adds a randomized delay between letters.
+    randomTypingSpeed = true,
+
+    -- Minimum randomized typing delay in milliseconds.
+    randomTypingSpeedMinimum = 10,
+
+    -- Maximum randomized typing delay in milliseconds.
+    randomTypingSpeedMaximum = 20,
+
+    -- Base delay before pressing Enter.
+    -- 0.1 = 100 milliseconds.
+    typeEnterSpeed = 0.1,
+
+    -- Randomizes the Enter delay.
+    randomTypeEnterSpeed = true,
+
+    -- Minimum Enter delay in milliseconds.
+    randomTypeEnterSpeedMinimum = 10,
+
+    -- Maximum Enter delay in milliseconds.
+    randomTypeEnterSpeedMaximum = 20,
+
+    -- Base delay before reacting to a new word.
+    -- 0.02 = 20 milliseconds.
+    reactionSpeed = 0.02,
+
+    -- Randomizes the reaction delay.
+    randomReactionSpeed = true,
+
+    -- Minimum reaction delay in milliseconds.
+    randomReactionSpeedMinimum = 20,
+
+    -- Maximum reaction delay in milliseconds.
+    randomReactionSpeedMaximum = 40,
+
+    -- The preferred word length.
+    -- The script tries to choose words closest to this length.
+    idealLength = 6,
+
+    -- Number of words shown in the GUI at once.
+    wordsPerPage = 10
+}
+
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
