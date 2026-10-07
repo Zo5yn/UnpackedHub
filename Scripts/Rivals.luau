@@ -1,7 +1,7 @@
 --[[
 Made by Zo5yn on Discord
 Run:
- loadstring(game:HttpGet("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true))()
+ local src = (pcall(function() return game:HttpGetAsync("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true) end) and game:HttpGetAsync("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true)) or game:HttpGet("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true); local fn, err = loadstring(src); if err then error(err) end; if fn then fn() end
 Changelogs:
  Added AC Bypass
  Fixed errors
@@ -17893,10 +17893,10 @@ end
 local function fn40(arg, arg2, arg3)
 arg:AddToggle({
     Label = "Re-run After Teleport",
-    Config = arg3
+    Config = arg3,
     OnChanged = function(autoLoad)
         if autoLoad then
-            queue_on_teleport([[loadstring(game:HttpGet("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true))()]])
+            queue_on_teleport([[local src = (pcall(function() return game:HttpGetAsync("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true) end) and game:HttpGetAsync("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true)) or game:HttpGet("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true); local fn, err = loadstring(src); if err then error(err) end; if fn then fn() end]])
         end
     end
 end
