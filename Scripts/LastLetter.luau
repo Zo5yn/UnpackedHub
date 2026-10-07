@@ -2,33 +2,11 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-local Configuration = {
-    useShortestWords = false; -- "false" if you want longest words or "true" if you want shortest words
-    notificationLibrary = "Akali"; -- "BocusLuke" or "Akali" both credits go to them
-    typingSpeed = 0.1; -- Typing speed (seconds between each letter)
-    typeEnterSpeed = 0.02; -- typing enter speed
-    randomTypeEnterSpeed = true; -- Randomized typing enter speed
-    randomTypeEnterSpeedMinimum = 20; -- ms (0.02 in task.wait and wait) 
-    randomTypeEnterSpeedMaximum = 40; -- ms (0.04 in task.wait and wait) 
-    reactionSpeed = 0.1; -- reaction speed
-    randomReactionSpeed = true; -- Randomized typing enter speed
-    randomReactionSpeedMinimum = 20; -- ms (0.02 in task.wait and wait) 
-    randomReactionSpeedMaximum = 40; -- ms (0.04 in task.wait and wait) 
-    idealLength = 6; -- Ideal length
-    wordsPerPage = 10; -- Words per page
-    randomTypingSpeed = true; -- Randomized typing speed
-    randomTypingSpeedMinimum = 70; -- ms (0.07 in task.wait and wait) 
-    randomTypingSpeedMaximum = 200; -- ms (0.2 in task.wait and wait) 
-}
-
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
-local LogService = game:GetService("LogService")
 local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -36,202 +14,158 @@ local playerGui = player:WaitForChild("PlayerGui")
 local Active = false
 local TypingWord = false
 local dictionaryLoaded = false
+
 local dictionary = {}
 local allWords = {}
-local commonWords = {}
 local usedWords = {}
-local currentPage = 1
 local prefixCache = {}
-local trollWord = nil
-local env = {}
+
+local currentPage = 1
+local currentWordObject = nil
+local lastLetters = ""
+local roundToken = 0
+
+local Akali
 
 local CUSTOM_DICTIONARY = {
-    "gealousies";
-    "gealousy";
-    "gealous";
-    "gealing";
-    "gealed";
-    "geals";
-    "yoyoyoyoyo";
-    "yoyodyne";
-    "yoyogi";
-    "yoyomf";
-    "yoyoda";
-    "yoyos";
-    "yoyow";
-    "ippons";
-    "ippoo";
-    "ippon";
-    "elloughton";
-    "ellomenos";
-    "ellobius";
-    "ellora";
-    "ellore";
-    "elloes";
+    "gealousies",
+    "gealousy",
+    "gealous",
+    "gealing",
+    "gealed",
+    "geals",
+    "yoyoyoyoyo",
+    "yoyodyne",
+    "yoyogi",
+    "yoyomf",
+    "yoyoda",
+    "yoyos",
+    "yoyow",
+    "ippons",
+    "ippoo",
+    "ippon",
+    "elloughton",
+    "ellomenos",
+    "ellobius",
+    "ellora",
+    "ellore",
+    "elloes"
 }
 
 local function Notification(title, text, duration)
     if Configuration.notificationLibrary == "Akali" then
         pcall(function()
-            local Akali = loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/Libraries/Akali.lua"))()
+            if not Akali then
+                Akali = loadstring(game:HttpGet(
+                    "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/Libraries/Akali.lua"
+                ))()
+            end
+
             if Akali and Akali.Notify then
                 Akali:Notify(title, text, duration)
             end
         end)
-    elseif Configuration.notificationLibrary == "BocusLuke" then
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {
-                Title = title;
-                Text = text;
-                Duration = duration;
-            })
-        end)
-    else
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {
-                Title = title;
-                Text = text;
-                Duration = duration;
-            })
-        end)
+
+        return
     end
+
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = duration
+        })
+    end)
+end
+
+local function IsTextObject(object)
+    return object:IsA("TextLabel")
+        or object:IsA("TextButton")
+        or object:IsA("TextBox")
 end
 
 local function IsMyTurn()
-    local InGame = playerGui:FindFirstChild("InGame")
-    if not InGame then
+    local inGame = playerGui:FindFirstChild("InGame")
+
+    if not inGame then
         return false
     end
 
-    local Frame = InGame:FindFirstChild("Frame")
-    if not Frame then
+    local frame = inGame:FindFirstChild("Frame")
+
+    if not frame or not frame.Visible then
         return false
     end
 
-    local CurrentWord = Frame:FindFirstChild("CurrentWord")
-    if not CurrentWord then
-        return false
-    end
+    local foundTurnIndicator = false
 
-    local Turn = Frame:FindFirstChild("Turn")
-    if Turn then
-        if Turn:IsA("TextLabel") or Turn:IsA("TextButton") then
-            local Text = Turn.Text:lower()
-            if Text ~= "" then
-                if Text:find(player.Name:lower(), 1, true) or Text:find(player.DisplayName:lower(), 1, true) then
-                    return true
+    for _, object in ipairs(frame:GetDescendants()) do
+        if IsTextObject(object) then
+            local name = object.Name:lower()
+            local text = object.Text:lower()
+
+            if name:find("turn", 1, true)
+                or name:find("player", 1, true)
+                or name:find("current", 1, true) then
+
+                if text ~= "" then
+                    foundTurnIndicator = true
+
+                    if text:find(player.Name:lower(), 1, true)
+                        or text:find(player.DisplayName:lower(), 1, true) then
+                        return true
+                    end
                 end
             end
         end
     end
 
-    local PlayerName = Frame:FindFirstChild("PlayerName")
-    if PlayerName and (PlayerName:IsA("TextLabel") or PlayerName:IsA("TextButton")) then
-        local Text = PlayerName.Text:lower()
-        if Text:find(player.Name:lower(), 1, true) or Text:find(player.DisplayName:lower(), 1, true) then
-            return true
-        end
+    if not foundTurnIndicator then
+        return true
     end
 
-    local CurrentPlayer = Frame:FindFirstChild("CurrentPlayer")
-    if CurrentPlayer and (CurrentPlayer:IsA("TextLabel") or CurrentPlayer:IsA("TextButton")) then
-        local Text = CurrentPlayer.Text:lower()
-        if Text:find(player.Name:lower(), 1, true) or Text:find(player.DisplayName:lower(), 1, true) then
-            return true
-        end
-    end
-
-    for _, Object in ipairs(Frame:GetDescendants()) do
-        if Object:IsA("TextLabel") or Object:IsA("TextButton") then
-            local Name = Object.Name:lower()
-            if Name:find("turn", 1, true) or Name:find("player", 1, true) then
-                local Text = Object.Text:lower()
-                if Text:find(player.Name:lower(), 1, true) or Text:find(player.DisplayName:lower(), 1, true) then
-                    return true
-                end
-            end
-        end
-    end
-
-    return true
-end
-
-local function GetKillerScore(word)
-    local Score = 0
-
-    for i = 1, #word do
-        local Character = word:sub(i, i)
-
-        if Character == "q" then
-            Score += 10
-        elseif Character == "j" then
-            Score += 9
-        elseif Character == "x" then
-            Score += 8
-        elseif Character == "z" then
-            Score += 8
-        elseif Character == "v" then
-            Score += 7
-        elseif Character == "k" then
-            Score += 6
-        elseif Character == "w" then
-            Score += 5
-        elseif Character == "y" then
-            Score += 4
-        elseif Character == "f" then
-            Score += 3
-        elseif Character == "b" then
-            Score += 3
-        elseif Character == "p" then
-            Score += 2
-        elseif Character == "g" then
-            Score += 2
-        end
-    end
-
-    return Score
+    return false
 end
 
 local function GetCurrentGameWord()
-    local InGame = playerGui:FindFirstChild("InGame")
-    if not InGame then
-        return ""
+    local inGame = playerGui:FindFirstChild("InGame")
+
+    if not inGame then
+        return "", false
     end
 
-    local Frame = InGame:FindFirstChild("Frame")
-    if not Frame then
-        return ""
+    local frame = inGame:FindFirstChild("Frame")
+
+    if not frame then
+        return "", false
     end
 
-    local CurrentWord = Frame:FindFirstChild("CurrentWord")
-    if not CurrentWord then
-        return ""
+    local currentWord = frame:FindFirstChild("CurrentWord")
+
+    if not currentWord then
+        return "", false
     end
 
-    local Objects = {}
+    local objects = {}
 
-    for _, Object in ipairs(CurrentWord:GetDescendants()) do
-        if Object:IsA("GuiObject") then
-            local Text = ""
+    for _, object in ipairs(currentWord:GetDescendants()) do
+        if object:IsA("GuiObject") and IsTextObject(object) then
+            local text = object.Text or ""
 
-            if Object:IsA("TextLabel") or Object:IsA("TextButton") or Object:IsA("TextBox") then
-                Text = Object.Text or ""
-            end
+            text = text:gsub("%s+", "")
 
-            Text = Text:gsub("%s+", "")
-
-            if Text ~= "" then
-                table.insert(Objects, {
-                    Object = Object;
-                    Text = Text;
-                    Position = Object.AbsolutePosition.X;
-                    Name = tonumber(Object.Name) or math.huge;
+            if text ~= "" then
+                table.insert(objects, {
+                    Object = object,
+                    Text = text,
+                    Position = object.AbsolutePosition.X,
+                    Name = tonumber(object.Name) or math.huge
                 })
             end
         end
     end
 
-    table.sort(Objects, function(a, b)
+    table.sort(objects, function(a, b)
         if a.Position ~= b.Position then
             return a.Position < b.Position
         end
@@ -242,15 +176,17 @@ local function GetCurrentGameWord()
     local letters = ""
     local censored = false
 
-    for _, Data in ipairs(Objects) do
-        local Text = Data.Text
+    for _, data in ipairs(objects) do
+        local text = data.Text
 
-        if Text:find("â€¢", 1, true) or Text:find("*", 1, true) then
+        if text:find("•", 1, true)
+            or text:find("*", 1, true)
+            or text:find("â€¢", 1, true) then
             censored = true
         end
 
-        if #Text <= 1 then
-            letters ..= Text
+        if #text <= 1 then
+            letters ..= text
         end
     end
 
@@ -259,107 +195,133 @@ local function GetCurrentGameWord()
     return letters, censored
 end
 
+local function GetKillerScore(word)
+    local score = 0
+
+    for i = 1, #word do
+        local character = word:sub(i, i)
+
+        if character == "q" then
+            score += 10
+        elseif character == "j" then
+            score += 9
+        elseif character == "x" or character == "z" then
+            score += 8
+        elseif character == "v" then
+            score += 7
+        elseif character == "k" then
+            score += 6
+        elseif character == "w" then
+            score += 5
+        elseif character == "y" then
+            score += 4
+        elseif character == "f" or character == "b" then
+            score += 3
+        elseif character == "p" or character == "g" then
+            score += 2
+        end
+    end
+
+    return score
+end
+
 local function FindWordRange(prefix)
-    if prefix == "" then
+    if prefix == "" or #allWords == 0 then
         return 1, #allWords
     end
 
-    local Cached = prefixCache[prefix]
-    if Cached then
-        return Cached[1], Cached[2]
+    if prefixCache[prefix] then
+        return prefixCache[prefix][1], prefixCache[prefix][2]
     end
 
-    local Low = 1
-    local High = #allWords
+    local low = 1
+    local high = #allWords
+    local start = #allWords + 1
 
-    while Low <= High do
-        local Mid = math.floor((Low + High) / 2)
+    while low <= high do
+        local mid = math.floor((low + high) / 2)
 
-        if allWords[Mid] < prefix then
-            Low = Mid + 1
+        if allWords[mid] < prefix then
+            low = mid + 1
         else
-            High = Mid - 1
+            start = mid
+            high = mid - 1
         end
     end
 
-    local Start = Low
-    local SearchPrefix = prefix
-
-    Low = 1
-    High = #allWords
-
-    local EndPrefix = SearchPrefix
-    local LastCharacter = EndPrefix:sub(-1)
-
-    if LastCharacter ~= "" then
-        EndPrefix = EndPrefix:sub(1, -2) .. string.char(string.byte(LastCharacter) + 1)
+    if start > #allWords or not allWords[start]:sub(1, #prefix) == prefix then
+        prefixCache[prefix] = {start, start - 1}
+        return start, start - 1
     end
 
-    while Low <= High do
-        local Mid = math.floor((Low + High) / 2)
+    local finish = start
 
-        if allWords[Mid] < EndPrefix then
-            Low = Mid + 1
-        else
-            High = Mid - 1
-        end
+    while finish <= #allWords
+        and allWords[finish]:sub(1, #prefix) == prefix do
+        finish += 1
     end
 
-    local Finish = High
+    finish -= 1
 
     prefixCache[prefix] = {
-        Start;
-        Finish;
+        start,
+        finish
     }
 
-    return Start, Finish
+    return start, finish
 end
 
 local function GetMatchingWords(prefix, amount)
-    local Results = {}
+    local results = {}
 
     if prefix == "" then
-        return Results
+        return results
     end
 
-    local Start, Finish = FindWordRange(prefix)
+    local start, finish = FindWordRange(prefix)
 
-    if Start > Finish then
-        return Results
+    if start > finish then
+        return results
     end
 
-    for i = Start, Finish do
-        local Word = allWords[i]
+    for i = start, finish do
+        local word = allWords[i]
 
-        if Word:sub(1, #prefix) == prefix then
-            if not usedWords[Word] then
-                table.insert(Results, Word)
+        if not usedWords[word] then
+            table.insert(results, word)
 
-                if #Results >= amount then
-                    break
-                end
+            if #results >= amount then
+                break
             end
         end
     end
 
-    return Results
+    return results
 end
 
-local function retypeWord(letters)
-    for i = 1, #letters do
-        local Character = letters:sub(i, i):upper()
-        local KeyCode = Enum.KeyCode[Character]
+local function SendKey(keyCode)
+    VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+    VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+end
 
-        if KeyCode then
-            VirtualInputManager:SendKeyEvent(true, KeyCode, false, game)
+local function RetypeWord(word)
+    for i = 1, #word do
+        if not Active then
+            return
+        end
+
+        local character = word:sub(i, i):upper()
+        local keyCode = Enum.KeyCode[character]
+
+        if keyCode then
+            SendKey(keyCode)
             task.wait(0.005)
-            VirtualInputManager:SendKeyEvent(false, KeyCode, false, game)
         end
     end
 end
 
 local function autoTypeWord(word, currentInput)
-    if TypingWord then
+    if TypingWord or not Active then
         return
     end
 
@@ -367,90 +329,117 @@ local function autoTypeWord(word, currentInput)
         return
     end
 
-    currentInput = currentInput or ""
+    currentInput = tostring(currentInput or ""):lower()
 
     if word:sub(1, #currentInput) ~= currentInput then
         return
     end
 
+    local token = roundToken
+
     TypingWord = true
-    trollWord = word
 
-    local Remaining = word:sub(#currentInput + 1)
+    local remaining = word:sub(#currentInput + 1)
 
-    for i = 1, #Remaining do
-        if not Active or not IsMyTurn() then
+    for i = 1, #remaining do
+        if not Active
+            or token ~= roundToken
+            or not IsMyTurn() then
+
             TypingWord = false
             return
         end
 
-        local Character = Remaining:sub(i, i):upper()
-        local KeyCode = Enum.KeyCode[Character]
+        local currentLetters = GetCurrentGameWord()
 
-        if KeyCode then
-            VirtualInputManager:SendKeyEvent(true, KeyCode, false, game)
-            VirtualInputManager:SendKeyEvent(false, KeyCode, false, game)
+        if currentLetters ~= currentInput then
+            TypingWord = false
+            return
+        end
 
-            local Delay = Configuration.typingSpeed
+        local character = remaining:sub(i, i):upper()
+        local keyCode = Enum.KeyCode[character]
+
+        if keyCode then
+            SendKey(keyCode)
+
+            local delayTime = Configuration.typingSpeed
 
             if Configuration.randomTypingSpeed then
-                Delay = math.random(Configuration.randomTypingSpeedMinimum, Configuration.randomTypingSpeedMaximum) / 1000
+                delayTime = math.random(
+                    Configuration.randomTypingSpeedMinimum,
+                    Configuration.randomTypingSpeedMaximum
+                ) / 1000
             end
 
-            task.wait(Delay)
+            task.wait(delayTime)
         end
     end
 
-    local ActualWord = GetCurrentGameWord()
+    if not Active
+        or token ~= roundToken
+        or not IsMyTurn() then
 
-    if ActualWord ~= "" and ActualWord ~= word:lower() then
-        local Amount = math.max(1, #ActualWord - #currentInput)
-
-        for _ = 1, Amount do
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game)
-            task.wait(0.01)
-        end
-
-        retypeWord(Remaining)
+        TypingWord = false
+        return
     end
 
-    local EnterDelay = Configuration.typeEnterSpeed
+    local actualWord = GetCurrentGameWord()
+
+    if actualWord ~= "" and actualWord ~= word then
+        if #actualWord > #currentInput then
+            local amount = #actualWord - #currentInput
+
+            for _ = 1, amount do
+                SendKey(Enum.KeyCode.Backspace)
+                task.wait(0.01)
+            end
+        end
+
+        RetypeWord(remaining)
+    end
+
+    local enterDelay = Configuration.typeEnterSpeed
 
     if Configuration.randomTypeEnterSpeed then
-        EnterDelay = math.random(Configuration.randomTypeEnterSpeedMinimum, Configuration.randomTypeEnterSpeedMaximum) / 1000
+        enterDelay = math.random(
+            Configuration.randomTypeEnterSpeedMinimum,
+            Configuration.randomTypeEnterSpeedMaximum
+        ) / 1000
     end
 
-    task.wait(EnterDelay)
+    task.wait(enterDelay)
 
-    if Active and IsMyTurn() then
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+    if Active
+        and token == roundToken
+        and IsMyTurn() then
+
+        SendKey(Enum.KeyCode.Return)
+        usedWords[word] = true
     end
 
-    usedWords[word] = true
     TypingWord = false
 end
 
 local function handleWord(letters)
-    if TypingWord then
+    if TypingWord or not Active then
         return
     end
 
-    local input = tostring(letters or ""):lower()
+    letters = tostring(letters or ""):lower()
 
-    if input == "" then
+    if letters == "" then
         return
     end
 
-    local candidates = GetMatchingWords(input, 5000)
+    local candidates = GetMatchingWords(letters, 5000)
 
     table.sort(candidates, function(a, b)
-        local DistanceA = math.abs(#a - Configuration.idealLength)
-        local DistanceB = math.abs(#b - Configuration.idealLength)
+        local distanceA = math.abs(#a - Configuration.idealLength)
+        local distanceB = math.abs(#b - Configuration.idealLength)
 
-        if DistanceA ~= DistanceB then
-            return DistanceA < DistanceB
+        if distanceA ~= distanceB then
+            return distanceA < distanceB
         end
 
         if Configuration.useShortestWords then
@@ -463,75 +452,71 @@ local function handleWord(letters)
             end
         end
 
-        local ScoreA = GetKillerScore(a)
-        local ScoreB = GetKillerScore(b)
+        local scoreA = GetKillerScore(a)
+        local scoreB = GetKillerScore(b)
 
-        if ScoreA ~= ScoreB then
-            return ScoreA > ScoreB
+        if scoreA ~= scoreB then
+            return scoreA > scoreB
         end
 
         return a < b
     end)
 
-    if #candidates > 0 then
-        trollWord = candidates[1]
-        autoTypeWord(trollWord, input)
-    else
-        task.wait(0.1)
+    if #candidates == 0 then
+        return
     end
+
+    autoTypeWord(candidates[1], letters)
 end
 
 local function loadFromJSON(content)
-    local Success, Data = pcall(function()
+    local success, data = pcall(function()
         return HttpService:JSONDecode(content)
     end)
 
-    if not Success or type(Data) ~= "table" then
-        return false
+    if not success or type(data) ~= "table" then
+        return 0
     end
 
-    local Words = {}
+    local count = 0
 
-    for Word, Value in pairs(Data) do
-        if type(Word) == "string" and type(Value) ~= "table" then
-            table.insert(Words, Word:lower())
-        elseif type(Value) == "string" then
-            table.insert(Words, Value:lower())
+    for word, value in pairs(data) do
+        local candidate
+
+        if type(word) == "string" and type(value) ~= "table" then
+            candidate = word
+        elseif type(value) == "string" then
+            candidate = value
         end
-    end
 
-    if #Words == 0 then
-        return false
-    end
+        if candidate then
+            candidate = candidate:lower()
 
-    for _, Word in ipairs(Words) do
-        if Word:match("^[a-z]+$") then
-            table.insert(allWords, Word)
-        end
-    end
-
-    return #allWords > 0
-end
-
-local function loadFromText(content)
-    local Count = 0
-
-    for Word in content:gmatch("[^\r\n]+") do
-        Word = Word:lower():gsub("^%s+", ""):gsub("%s+$", "")
-
-        local FirstWord = Word:match("^([^%s]+)")
-
-        if FirstWord then
-            FirstWord = FirstWord:lower()
-
-            if FirstWord:match("^[a-z]+$") then
-                table.insert(allWords, FirstWord)
-                Count += 1
+            if candidate:match("^[a-z]+$") then
+                table.insert(allWords, candidate)
+                count += 1
             end
         end
     end
 
-    return Count > 0
+    return count
+end
+
+local function loadFromText(content)
+    local count = 0
+
+    for word in content:gmatch("[^\r\n]+") do
+        word = word:lower():match("^%s*(.-)%s*$")
+
+        local firstWord = word:match("^([^%s]+)")
+
+        if firstWord and firstWord:match("^[a-z]+$") then
+            table.insert(allWords, firstWord)
+            count += 1
+        end
+    end
+
+    return count
 end
 
 local function loadDictionary()
@@ -544,66 +529,78 @@ local function loadDictionary()
     prefixCache = {}
 
     if isfile and readfile and isfile("ZosynWordList.txt") then
-        local Success, Content = pcall(readfile, "ZosynWordList.txt")
+        local success, content = pcall(readfile, "ZosynWordList.txt")
 
-        if Success and Content then
-            loadFromText(Content)
+        if success and content and content ~= "" then
+            loadFromText(content)
         end
     end
 
     if #allWords == 0 then
-        local URLs = {
-            "https://raw.githubusercontent.com/QuavixAlt/-Q7-Zx-N-3L-8mT2P-EwHkA9cFrXyS/refs/heads/main/words.txt";
-            "https://raw.githubusercontent.com/dwyl/english-words/refs/heads/master/words_dictionary.json";
-            "https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english-usa-no-swears.txt";
-            "https://raw.githubusercontent.com/skrylor/english-words/refs/heads/main/merged_english.txt";
+        local sources = {
+            {
+                "https://raw.githubusercontent.com/QuavixAlt/-Q7-Zx-N-3L-8mT2P-EwHkA9cFrXyS/refs/heads/main/words.txt",
+                false
+            },
+            {
+                "https://raw.githubusercontent.com/dwyl/english-words/refs/heads/master/words_dictionary.json",
+                true
+            },
+            {
+                "https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english-usa-no-swears.txt",
+                false
+            },
+            {
+                "https://raw.githubusercontent.com/skrylor/english-words/refs/heads/main/merged_english.txt",
+                false
+            }
         }
 
-        for _, URL in ipairs(URLs) do
-            local Success, Content = pcall(function()
-                return game:HttpGet(URL)
+        for _, source in ipairs(sources) do
+            local success, content = pcall(function()
+                return game:HttpGet(source[1])
             end)
 
-            if Success and Content and Content ~= "" then
-                if URL:find("json", 1, true) then
-                    loadFromJSON(Content)
+            if success and content and content ~= "" then
+                if source[2] then
+                    loadFromJSON(content)
                 else
-                    loadFromText(Content)
+                    loadFromText(content)
                 end
             end
 
-            if #allWords > 0 then
+            if #allWords >= 10000 then
                 break
             end
         end
     end
 
-    for _, Word in ipairs(CUSTOM_DICTIONARY) do
-        table.insert(allWords, Word:lower())
+    for _, word in ipairs(CUSTOM_DICTIONARY) do
+        table.insert(allWords, word:lower())
     end
+
+    local uniqueWords = {}
+    local seen = {}
+
+    for _, word in ipairs(allWords) do
+        word = tostring(word):lower()
+
+        if word:match("^[a-z]+$") and not seen[word] then
+            seen[word] = true
+            uniqueWords[#uniqueWords + 1] = word
+        end
+    end
+
+    allWords = uniqueWords
 
     if #allWords == 0 then
         return false
     end
 
-    local NewWords = {}
-    local Seen = {}
-
-    for _, Word in ipairs(allWords) do
-        Word = tostring(Word):lower()
-
-        if Word:match("^[a-z]+$") and not Seen[Word] then
-            Seen[Word] = true
-            table.insert(NewWords, Word)
-        end
-    end
-
-    allWords = NewWords
-
     table.sort(allWords)
 
-    for _, Word in ipairs(allWords) do
-        dictionary[Word] = true
+    for _, word in ipairs(allWords) do
+        dictionary[word] = true
     end
 
     dictionaryLoaded = true
@@ -611,21 +608,29 @@ local function loadDictionary()
     return true
 end
 
-local function createWordLabel(parent, text, size, offsetY)
-    local Label = Instance.new("TextButton")
+local function ResetRound()
+    roundToken += 1
+    usedWords = {}
+    TypingWord = false
+    lastLetters = ""
+    currentWordObject = nil
+    currentPage = 1
+end
 
-    Label.BackgroundTransparency = 1
-    Label.BorderSizePixel = 0
-    Label.Size = UDim2.new(1, -20, 0, size)
-    Label.Position = UDim2.new(0, 10, 0, offsetY)
-    Label.Text = text
-    Label.TextSize = 16
-    Label.Font = Enum.Font.Gotham
-    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Label.AutoButtonColor = false
-    Label.Parent = parent
+local function GetInGameFrame()
+    local inGame = playerGui:FindFirstChild("InGame")
 
-    return Label
+    if not inGame then
+        return nil
+    end
+
+    local frame = inGame:FindFirstChild("Frame")
+
+    if not frame or not frame:IsA("GuiObject") then
+        return nil
+    end
+
+    return frame
 end
 
 local screenGui
@@ -638,11 +643,9 @@ else
     screenGui.Parent = game:GetService("CoreGui")
 end
 
-screenGui.Name = tostring(math.random(0, 999999999))
+screenGui.Name = "ZosynAutoTyper_" .. math.random(1, 999999999)
 screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
-
-env.GuiName = screenGui.Name
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
@@ -652,44 +655,11 @@ Main.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 Main.BorderSizePixel = 0
 Main.Parent = screenGui
 
-local Dragging = false
-local DragStart
-local StartPosition
-
-Main.InputBegan:Connect(function(InputObject)
-    if InputObject.UserInputType == Enum.UserInputType.MouseButton1 or InputObject.UserInputType == Enum.UserInputType.Touch then
-        Dragging = true
-        DragStart = InputObject.Position
-        StartPosition = Main.Position
-
-        InputObject.Changed:Connect(function()
-            if InputObject.UserInputState == Enum.UserInputState.End then
-                Dragging = false
-            end
-        end)
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(InputObject)
-    if not Dragging then
-        return
-    end
-
-    if InputObject.UserInputType ~= Enum.UserInputType.MouseMovement and InputObject.UserInputType ~= Enum.UserInputType.Touch then
-        return
-    end
-
-    local Delta = InputObject.Position - DragStart
-
-    Main.Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y)
-end)
-
 local Corner = Instance.new("UICorner")
 Corner.CornerRadius = UDim.new(0, 8)
 Corner.Parent = Main
 
 local Title = Instance.new("TextLabel")
-Title.Name = "Title"
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
 Title.Text = "Zosyn's Auto Typer"
@@ -729,28 +699,52 @@ local ListCorner = Instance.new("UICorner")
 ListCorner.CornerRadius = UDim.new(0, 6)
 ListCorner.Parent = List
 
-local function displayPage()
-    for _, Object in ipairs(List:GetChildren()) do
-        if Object:IsA("GuiObject") then
-            Object:Destroy()
+local function createWordLabel(parent, text, offsetY)
+    local label = Instance.new("TextButton")
+
+    label.BackgroundTransparency = 1
+    label.BorderSizePixel = 0
+    label.Size = UDim2.new(1, -20, 0, 18)
+    label.Position = UDim2.new(0, 10, 0, offsetY)
+    label.Text = text
+    label.TextSize = 16
+    label.Font = Enum.Font.Gotham
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.AutoButtonColor = false
+    label.Parent = parent
+
+    return label
+end
+
+local function ClearList()
+    for _, object in ipairs(List:GetChildren()) do
+        if object:IsA("GuiObject") then
+            object:Destroy()
         end
     end
+end
 
-    local Start = ((currentPage - 1) * Configuration.wordsPerPage) + 1
-    local Finish = math.min(Start + Configuration.wordsPerPage - 1, #allWords)
+local function displayPage()
+    ClearList()
 
-    local Offset = 5
+    local start = ((currentPage - 1) * Configuration.wordsPerPage) + 1
+    local finish = math.min(
+        start + Configuration.wordsPerPage - 1,
+        #allWords
+    )
 
-    for i = Start, Finish do
-        local Word = allWords[i]
-        local Label = createWordLabel(List, Word, 18, Offset)
+    local offset = 5
 
-        Label.MouseButton1Click:Connect(function()
-            Input.Text = Word
-            handleWord(Word)
+    for i = start, finish do
+        local word = allWords[i]
+        local label = createWordLabel(List, word, offset)
+
+        label.MouseButton1Click:Connect(function()
+            Input.Text = word
+            handleWord(word)
         end)
 
-        Offset += 19
+        offset += 19
     end
 end
 
@@ -762,15 +756,14 @@ local function updateTopWords(input)
         return
     end
 
-    for _, Object in ipairs(List:GetChildren()) do
-        if Object:IsA("GuiObject") then
-            Object:Destroy()
-        end
-    end
+    ClearList()
 
-    local Matching = GetMatchingWords(input, Configuration.wordsPerPage)
+    local matching = GetMatchingWords(
+        input,
+        Configuration.wordsPerPage
+    )
 
-    table.sort(Matching, function(a, b)
+    table.sort(matching, function(a, b)
         if Configuration.useShortestWords then
             if #a ~= #b then
                 return #a < #b
@@ -781,27 +774,27 @@ local function updateTopWords(input)
             end
         end
 
-        local ScoreA = GetKillerScore(a)
-        local ScoreB = GetKillerScore(b)
+        local scoreA = GetKillerScore(a)
+        local scoreB = GetKillerScore(b)
 
-        if ScoreA ~= ScoreB then
-            return ScoreA > ScoreB
+        if scoreA ~= scoreB then
+            return scoreA > scoreB
         end
 
         return a < b
     end)
 
-    local Offset = 5
+    local offset = 5
 
-    for _, Word in ipairs(Matching) do
-        local Label = createWordLabel(List, Word, 18, Offset)
+    for _, word in ipairs(matching) do
+        local label = createWordLabel(List, word, offset)
 
-        Label.MouseButton1Click:Connect(function()
-            Input.Text = Word
-            handleWord(Word)
+        label.MouseButton1Click:Connect(function()
+            Input.Text = word
+            handleWord(word)
         end)
 
-        Offset += 19
+        offset += 19
     end
 end
 
@@ -809,136 +802,133 @@ Input:GetPropertyChangedSignal("Text"):Connect(function()
     updateTopWords(Input.Text)
 end)
 
-local function ResetRound()
-    usedWords = {}
-    trollWord = nil
-    TypingWord = false
-    currentPage = 1
-end
+local Dragging = false
+local DragStart
+local StartPosition
+
+Main.InputBegan:Connect(function(input)
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1
+        and input.UserInputType ~= Enum.UserInputType.Touch then
+        return
+    end
+
+    Dragging = true
+    DragStart = input.Position
+    StartPosition = Main.Position
+
+    input.Changed:Connect(function()
+        if input.UserInputState == Enum.UserInputState.End then
+            Dragging = false
+        end
+    end)
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if not Dragging then
+        return
+    end
+
+    if input.UserInputType ~= Enum.UserInputType.MouseMovement
+        and input.UserInputType ~= Enum.UserInputType.Touch then
+        return
+    end
+
+    local delta = input.Position - DragStart
+
+    Main.Position = UDim2.new(
+        StartPosition.X.Scale,
+        StartPosition.X.Offset + delta.X,
+        StartPosition.Y.Scale,
+        StartPosition.Y.Offset + delta.Y
+    )
+end)
 
 task.spawn(function()
     if not loadDictionary() then
-        Notification("Zosyn's Auto Typer", "Failed to load dictionary.", 5)
+        Notification(
+            "Zosyn's Auto Typer",
+            "Failed to load dictionary.",
+            5
+        )
         return
     end
 
     displayPage()
 
-    task.wait(0.5)
-
-    local InGame = playerGui:FindFirstChild("InGame")
-    local InGameFrame = InGame and InGame:FindFirstChild("Frame")
-
-    if InGameFrame and InGameFrame.Visible then
-        Active = true
-        Notification("Zosyn's Auto Typer", "Auto typer enabled", 5)
-    else
-        Active = false
-        ResetRound()
-        Notification("Zosyn's Auto Typer", "Auto typer disabled", 5)
-    end
-
-    if InGameFrame then
-        InGameFrame:GetPropertyChangedSignal("Visible"):Connect(function()
-            if InGameFrame.Visible then
-                Active = true
-                ResetRound()
-                Notification("Zosyn's Auto Typer", "Auto typer enabled", 5)
-            else
-                Active = false
-                ResetRound()
-                Notification("Zosyn's Auto Typer", "Auto typer disabled", 5)
-            end
-        end)
-    else
-        Notification("Zosyn's Auto Typer", "Game event join error", 5)
-    end
-
-    local currentWord
-
-    if InGameFrame then
-        currentWord = InGameFrame:FindFirstChild("CurrentWord")
-    end
-
-    local function CheckWord()
-        local letters = GetCurrentGameWord()
-
-        if not IsMyTurn() then
-            if TypingWord then
-                TypingWord = false
-            end
-
-            return
-        end
-
-        if letters ~= "" and Active and not TypingWord then
-            local ReactionDelay = Configuration.reactionSpeed
-
-            if Configuration.randomReactionSpeed then
-                ReactionDelay = math.random(Configuration.randomReactionSpeedMinimum, Configuration.randomReactionSpeedMaximum) / 1000
-            end
-
-            task.wait(ReactionDelay)
-
-            if Active and not TypingWord and IsMyTurn() then
-                handleWord(letters)
-            end
-        end
-    end
-
-    if currentWord then
-        currentWord.ChildAdded:Connect(function()
-            task.delay(0.05, function()
-                CheckWord()
-            end)
-        end)
-
-        currentWord.ChildRemoved:Connect(function()
-            task.delay(0.05, function()
-                CheckWord()
-            end)
-        end)
-
-        local initialLetters = GetCurrentGameWord()
-
-        if initialLetters ~= "" and Active and IsMyTurn() and not TypingWord then
-            handleWord(initialLetters)
-        end
-    end
+    local wasInGame = false
 
     while screenGui.Parent do
-        local InGameNow = playerGui:FindFirstChild("InGame")
-        local InGameFrameNow = InGameNow and InGameNow:FindFirstChild("Frame")
+        local frame = GetInGameFrame()
 
-        if InGameFrameNow and InGameFrameNow.Visible then
-            Active = true
-
-            local CurrentWordNow = InGameFrameNow:FindFirstChild("CurrentWord")
-
-            if CurrentWordNow and CurrentWordNow ~= currentWord then
-                currentWord = CurrentWordNow
-
-                currentWord.ChildAdded:Connect(function()
-                    task.delay(0.05, function()
-                        CheckWord()
-                    end)
-                end)
-
-                currentWord.ChildRemoved:Connect(function()
-                    task.delay(0.05, function()
-                        CheckWord()
-                    end)
-                end)
+        if frame and frame.Visible then
+            if not wasInGame then
+                wasInGame = true
+                Active = true
+                ResetRound()
             end
 
-            CheckWord()
+            local wordObject = frame:FindFirstChild("CurrentWord")
+
+            if wordObject ~= currentWordObject then
+                currentWordObject = wordObject
+                lastLetters = ""
+            end
+
+            if currentWordObject then
+                local letters = GetCurrentGameWord()
+
+                if letters ~= lastLetters then
+                    lastLetters = letters
+
+                    if letters ~= ""
+                        and Active
+                        and not TypingWord
+                        and IsMyTurn() then
+
+                        local reactionDelay =
+                            Configuration.reactionSpeed
+
+                        if Configuration.randomReactionSpeed then
+                            reactionDelay = math.random(
+                                Configuration.randomReactionSpeedMinimum,
+                                Configuration.randomReactionSpeedMaximum
+                            ) / 1000
+                        end
+
+                        local expectedLetters = letters
+                        local expectedToken = roundToken
+
+                        task.delay(reactionDelay, function()
+                            if not Active
+                                or TypingWord
+                                or expectedToken ~= roundToken
+                                or not IsMyTurn() then
+                                return
+                            end
+
+                            local currentLetters = GetCurrentGameWord()
+
+                            if currentLetters == expectedLetters then
+                                handleWord(currentLetters)
+                            end
+                        end)
+                    end
+                end
+            end
         else
-            if Active then
+            if wasInGame then
+                wasInGame = false
                 Active = false
                 ResetRound()
             end
         end
 
-        task.wait(0.15)
+        task.wait(0.03)
     end
 end)
+
+Notification(
+    "Zosyn's Auto Typer",
+    "Loaded.",
+    3
+)
