@@ -5,6 +5,7 @@ local url="https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/S
 Changelogs:
  Added AC Bypass
  Fixed errors
+ Fixed re-run
 ]]
 
 local _stbl; _stbl = hookfunction(getrenv().setmetatable, newcclosure(function(tbl, mt)
