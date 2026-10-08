@@ -1,7 +1,7 @@
 --[[
 Made by Zo5yn on Discord
 Run:
- local src = (pcall(function() return game:HttpGetAsync("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true) end) and game:HttpGetAsync("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true)) or game:HttpGet("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true); local fn, err = loadstring(src); if err then error(err) end; if fn then fn() end
+local url="https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau";local src=(pcall(function()return game:HttpGetAsync(url,true)end)and game:HttpGetAsync(url,true))or game:HttpGet(url,true);local fn,err=loadstring(src);if err then error(err)end;if fn then fn()end
 Changelogs:
  Added AC Bypass
  Fixed errors
@@ -17891,15 +17891,7 @@ return { Page = v120, Grid = v121 }
 end
 
 local function fn40(arg, arg2, arg3)
-arg:AddToggle({
-    Label = "Re-run After Teleport",
-    Config = arg3,
-    OnChanged = function(autoLoad)
-        if autoLoad then
-            queue_on_teleport([[local src = (pcall(function() return game:HttpGetAsync("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true) end) and game:HttpGetAsync("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true)) or game:HttpGet("https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau", true); local fn, err = loadstring(src); if err then error(err) end; if fn then fn() end]])
-        end
-    end
-})
+arg:AddToggle({Label = "Re-run After Teleport",Config = arg3})
 local stateData = arg2:GetStateData()
 
 arg:AddToggle({
@@ -66494,3 +66486,7 @@ function K.Unload()
 end
 
 tbl17.j1()(boot)
+
+if obj._stateData.AutoExecuteScript.Enabled then
+    queue_on_teleport([[local url="https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau";local src=(pcall(function()return game:HttpGetAsync(url,true)end)and game:HttpGetAsync(url,true))or game:HttpGet(url,true);local fn,err=loadstring(src);if err then error(err)end;if fn then fn()end]])
+end
