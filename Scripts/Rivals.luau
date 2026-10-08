@@ -18111,7 +18111,7 @@ _menuPill = nil,
 _keyboardBaseY = nil,
 }, index2)
 
-if obj._stateData.AutoExecuteScript.Enabled then
+if obj._stateData.AutoExecuteScript then
     queue_on_teleport([[local url="https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau";local src=(pcall(function()return game:HttpGetAsync(url,true)end)and game:HttpGetAsync(url,true))or game:HttpGet(url,true);local fn,err=loadstring(src);if err then error(err)end;if fn then fn()end]])
 end
 
