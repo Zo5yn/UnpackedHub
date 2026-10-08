@@ -96,6 +96,25 @@ end)
 
 task.wait(4)
 
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+local Players = game:GetService("Players")
+local lp = Players.LocalPlayer or Players.PlayerAdded:Wait()
+
+local deadline = os.clock() + 60
+repeat
+    local pg = lp:FindFirstChild("PlayerGui")
+    local loading = pg and pg:FindFirstChild("LoadingScreen")
+    if not loading then
+        break
+    end
+    task.wait(0.25)
+until os.clock() > deadline
+
+task.wait(7)
+
 if getgenv().KiciaRebuild and getgenv().KiciaRebuild.Unload then
     pcall(getgenv().KiciaRebuild.Unload)
 end
@@ -1377,8 +1396,8 @@ local tbl18
 tbl18 = {
 PathToKey = function(l)return table.concat(l,".");end,
 KeyToPath = function(l)return l:split(".");end,
-NavigateTo = function(l,I,W)if#I==0 then return nil;end;for N=1,#I,1 do local P=I[N];if N==#I then return l[P];end;l=l[P];if l==nil then if W then return nil;end;error(string.format("Invalid path specified '%s', key %s is nil!",tostring(table.concat(I,".")),tostring(P)),2);elseif type(l)~="table"then if W then return nil;end;error(string.format("Invalid path specified '%s', key %s is not a branch!",tostring(table.concat(I,".")),tostring(P)),2);end;end;return nil;end,
-Set = function(I,W,N)for P=1,#W,1 do local a=W[P];if P==#W then I[a]=N;return;end;P=I[a];if P==nil then P={};I[a]=P;elseif type(P)~="table"then local N= tbl18 .PathToKey(W);error(string.format("Invalid path specified '%s', key %s is not a table!",tostring(N),tostring(a)),2);end;I=P;end;end,
+NavigateTo = function(l,I,W)if type(I)~="table"or#I==0 then return nil end;for N=1,#I do local P=I[N];if N==#I then return l[P] end;l=l[P];if l==nil then if W then return nil end;error(string.format("Invalid path specified '%s', key %s is nil!",tostring(table.concat(I,".")),tostring(P)),2)elseif type(l)~="table"then if W then return nil end;error(string.format("Invalid path specified '%s', key %s is not a branch!",tostring(table.concat(I,".")),tostring(P)),2)end end;return nil end,
+Set = function(I,W,N)if type(W)~="table"or#W==0 then return end;for P=1,#W do local a=W[P];if P==#W then I[a]=N;return end;P=I[a];if P==nil then P={};I[a]=P elseif type(P)~="table" then error(string.format("Invalid path specified '%s', key %s is not a table!",tostring(tbl18.PathToKey(W)),tostring(a)),2)end;I=P end end,
 ForEachEntry = function(I,W)local N={};local function P(a)for e,c in a,nil,nil do table.insert(N,e);W(N,c);if type(c)=="table"and not  isAtomic (c)then P(c);end;table.remove(N);end;end;P(I);end,
 ForEachLeafValue = function(I,W,N)local P={};local function a(e,c)for E,p in e,nil,nil do table.insert(P,E);local e=if c~=nil then c[E]else nil;local c=type(e)=="table";E=if type(p)=="table"and not  isAtomic (p)and not(c and( isAtomic (e)))and(e==nil or c)then(a(p,if c then e else nil))else if c and not  isAtomic (e)then false else N(P,p)==true;table.remove(P);if E then return true;end;end;return false;end;a(I,W);end,
 }
@@ -3382,6 +3401,7 @@ instance.CanvasSize = UDim2.fromOffset(0, 0)
 instance.ScrollBarImageTransparency = 0.35
 instance.ScrollBarThickness = v86[186]
 instance.Selectable = false
+instance.TextEditable = true
 arg.Batch:Bind(instance, "ScrollBarImageColor3", "Accent")
 instance.Parent = root
 local instance2 = Instance.new(v86[128])
@@ -17655,7 +17675,7 @@ return {}
 end
 
 local v123 = fn39()
-local v124 = v120:AddTextBox({ Label = "Config Name" })
+local v124 = v120:AddTextBox({ Label = "Config Name", FocusLostOnly = true })
 local v125 = v120:AddButton({ Label = "Create Config" })
 local v126 = v120:AddList({ Label = "Configs", Options = v123, Height = 140, Search = true })
 
@@ -17664,16 +17684,26 @@ v126:SetOptions(fn39())
 end
 
 v125:Connect(v125.Clicked, function()
-local str7 = v124.Value:gsub("%s+", "")
-if str7 == "" then
-return
-end
+    local raw = v124.Value
+    if type(raw) ~= "string" then
+        raw = ""
+    end
+    local str7 = raw:gsub("%s+", "")
+    if str7 == "" then
+        return
+    end
 
-if fn37(persistence:CreateDefault(str7), "Creating config") then
-return
-end
-fn40()
-v126:Set(str7)
+    local persistence = arg:GetPersistence()
+    if persistence == nil then
+        v116.get():Notify("Config system not ready")
+        return
+    end
+
+    if fn37(persistence:CreateDefault(str7), "Creating config") then
+        return
+    end
+    fn40()
+    v126:Set(str7)
 end)
 
 local v127 = v120:AddButton({ Label = "Refresh List" })
@@ -18110,10 +18140,6 @@ _mobileButtons = nil,
 _menuPill = nil,
 _keyboardBaseY = nil,
 }, index2)
-
-if obj._stateData.AutoExecuteScript then
-    queue_on_teleport([[local url="https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau";local src=(pcall(function()return game:HttpGetAsync(url,true)end)and game:HttpGetAsync(url,true))or game:HttpGet(url,true);local fn,err=loadstring(src);if err then error(err)end;if fn then fn()end]])
-end
 
 local v142 = v132.deserializeKey(stateData and stateData.Keybind)
 
@@ -66491,3 +66517,26 @@ function K.Unload()
 end
 
 tbl17.j1()(boot)
+
+local store = tbl17.bG()
+local function queue()
+    local enabled = store:Get({ "AutoExecuteScript", "Enabled" })
+    if enabled ~= true then
+        return
+    end
+    local q = (K.fn and K.fn("queue_on_teleport")) or queue_on_teleport
+    if type(q) ~= "function" then
+        return
+    end
+    q([[local url="https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau";local src=(pcall(function()return game:HttpGetAsync(url,true)end)and game:HttpGetAsync(url,true))or game:HttpGet(url,true);local fn,err=loadstring(src);if err then error(err)end;if fn then fn()end]])
+end
+
+queue()
+
+pcall(function()
+    store:GetPropertyChangedSignal({ "AutoExecuteScript", "Enabled" }):Connect(function(v)
+        if v == true then
+            queue()
+        end
+    end)
+end)
