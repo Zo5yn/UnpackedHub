@@ -232,7 +232,6 @@ function Trove:Remove(o, keep)
         if not keep then cleanItem(o) end
     end
 end
---  Promise held until it settles; cancelled if the trove is cleaned first.
 function Trove:AddPromise(promise)
     if tostring(promise:getStatus()) == "Started" then
         self:Add(promise)
@@ -242,7 +241,6 @@ function Trove:AddPromise(promise)
     end
     return promise
 end
---  Sub-trove that cleans itself up when `instance` is destroyed.
 function Trove:AttachExtend(instance)
     local sub = self:Extend()
     sub:Connect(instance.Destroying, function() self:Remove(sub) end)
@@ -457,14 +455,8 @@ local v86 = {
     [199] = "Unload",
     [200] = 26,
 }
---  Environment Kicia's modules expect: the module table and the aliases its
---  loader set up before them (v102 = rawget, v103 = rawset, v107 = pcall).
 local tbl17 = { cache = {} }
 local v102, v103, v107 = rawget, rawset, pcall
---  The obfuscator's integrity counters. Every check in the lifted code has one
---  branch that hangs and one that runs the real code; these values sit inside
---  the window where all of them take the real branch (n26 in [4790, 4809),
---  n25 in [3866, 3887]).
 local n25, n26 = 3870, 4800
 local flag2, flag3 = true, true
 local function n29() return 0 end
@@ -472,7 +464,6 @@ local cloneref = K.fn("cloneref") or function(x) return x end
 local gethui = K.fn("gethui") or function() return game:GetService("CoreGui") end
 local getthreadidentity = K.fn("getthreadidentity") or K.fn("getidentity") or function() return 8 end
 local setthreadidentity = K.fn("setthreadidentity") or K.fn("setidentity") or function() end
---  The rest of the loader's locals (clonefunction'd so hooks on them can't see us).
 local function clonefn(f)
     local c = K.fn("clonefunction")
     if c and f then
@@ -499,13 +490,9 @@ local InstanceHandle
 pcall(function() InstanceHandle = getfenv(0).InstanceHandle end)
 if InstanceHandle == nil then pcall(function() InstanceHandle = getgenv().InstanceHandle end) end
 if InstanceHandle == nil then InstanceHandle = { new = function(x) return x end } end
---  The modules the decompiler lost (their bodies are `fn35(...) end` in
---  the dump), rebuilt from how the rest of Kicia's code calls them.
 
---  k: Trove
 tbl17.k = function() return { new = function(name) return Trove.new(name) end } end
 
---  w: viewport / pointer / key / path helpers
 do
     local UIS = UserInputService
     local GuiService = game:GetService("GuiService")
@@ -623,8 +610,6 @@ do
     tbl17.w = function() return W end
 end
 
---  P: two-way link between a control and a settings path. Sliders ask for
---  Debounce so dragging writes once per short burst instead of every frame.
 do
     local P = {}
     function P.bind(trove, config, control, path, opts)
@@ -650,7 +635,6 @@ do
     tbl17.P = function() return P end
 end
 
---  c5: the critically damped Spring (Position, Velocity, Target, Speed, Damper).
 do
     local Spring = {}
     local function posVel(self, now)
@@ -735,13 +719,8 @@ do
     tbl17.c5 = function() return Spring end
 end
 
---  ca: the AI aim mode's network weights. They are not in the dump; cc falls
---  back to Linear movement without them.
 tbl17.ca = function() return nil end
 
---  hH: weather emitter specs and lightning / thunder constants. Kicia's own
---  values are not in the dump; these fit every field the weather module reads
---  and use particle textures that ship with Roblox.
 do
     local soft = "rbxasset://textures/particles/smoke_main.dds"
     local sparkle = "rbxasset://textures/particles/sparkles_main.dds"
@@ -786,8 +765,6 @@ do
     tbl17.hH = function() return W end
 end
 
---  iQ: the Visuals > Player ESP page. Its builder is lost; rebuilt with the
---  same menu calls Kicia's other pages use, over Kicia's own Esp settings.
 tbl17.iQ = function()
     return function(_, _, grid)
         local enable = tbl17.h6()
@@ -815,7 +792,6 @@ tbl17.iQ = function()
         local function side(title, key, where)
             local s = grid:AddSection({ Title = title, Side = where })
             local function Q(...) return P(key, ...) end
-            --  Kicia's ESP draws a side only when Main AND this side are enabled
             enable(s, "Enable " .. title .. " ESP", { "Always", "Toggle", "Hold" }, P(key), true)
             local function color(label, path, transparency)
                 local t = s:AddToggle({ Label = label, Config = Q(path, "Enabled") })
@@ -870,8 +846,6 @@ tbl17.iQ = function()
     end
 end
 
---  eZ: Kicia's online user service (sessions with user.kicia.cc). Offline here:
---  nothing is sent anywhere, connecting is refused.
 tbl17.eZ = function()
     local Offline = {}
     Offline.__index = Offline
@@ -898,7 +872,6 @@ tbl17.eZ = function()
     end
     return Offline
 end
---  Kicia's own modules, lifted from the dump (extract.py). Do not edit by hand.
 do -- a
 local function fn35()
 return {
@@ -1396,8 +1369,8 @@ local tbl18
 tbl18 = {
 PathToKey = function(l)return table.concat(l,".");end,
 KeyToPath = function(l)return l:split(".");end,
-NavigateTo = function(l,I,W)if type(I)~="table"or#I==0 then return nil end;for N=1,#I do local P=I[N];if N==#I then return l[P] end;l=l[P];if l==nil then if W then return nil end;error(string.format("Invalid path specified '%s', key %s is nil!",tostring(table.concat(I,".")),tostring(P)),2)elseif type(l)~="table"then if W then return nil end;error(string.format("Invalid path specified '%s', key %s is not a branch!",tostring(table.concat(I,".")),tostring(P)),2)end end;return nil end,
-Set = function(I,W,N)if type(W)~="table"or#W==0 then return end;for P=1,#W do local a=W[P];if P==#W then I[a]=N;return end;P=I[a];if P==nil then P={};I[a]=P elseif type(P)~="table" then error(string.format("Invalid path specified '%s', key %s is not a table!",tostring(tbl18.PathToKey(W)),tostring(a)),2)end;I=P end end,
+NavigateTo = function(l,I,W)if#I==0 then return nil;end;for N=1,#I,1 do local P=I[N];if N==#I then return l[P];end;l=l[P];if l==nil then if W then return nil;end;error(string.format("Invalid path specified '%s', key %s is nil!",tostring(table.concat(I,".")),tostring(P)),2);elseif type(l)~="table"then if W then return nil;end;error(string.format("Invalid path specified '%s', key %s is not a branch!",tostring(table.concat(I,".")),tostring(P)),2);end;end;return nil;end,
+Set = function(I,W,N)for P=1,#W,1 do local a=W[P];if P==#W then I[a]=N;return;end;P=I[a];if P==nil then P={};I[a]=P;elseif type(P)~="table"then local N= tbl18 .PathToKey(W);error(string.format("Invalid path specified '%s', key %s is not a table!",tostring(N),tostring(a)),2);end;I=P;end;end,
 ForEachEntry = function(I,W)local N={};local function P(a)for e,c in a,nil,nil do table.insert(N,e);W(N,c);if type(c)=="table"and not  isAtomic (c)then P(c);end;table.remove(N);end;end;P(I);end,
 ForEachLeafValue = function(I,W,N)local P={};local function a(e,c)for E,p in e,nil,nil do table.insert(P,E);local e=if c~=nil then c[E]else nil;local c=type(e)=="table";E=if type(p)=="table"and not  isAtomic (p)and not(c and( isAtomic (e)))and(e==nil or c)then(a(p,if c then e else nil))else if c and not  isAtomic (e)then false else N(P,p)==true;table.remove(P);if E then return true;end;end;return false;end;a(I,W);end,
 }
@@ -2066,7 +2039,7 @@ return y.c
 end
 end
 do -- z
-local function fn35()return{Accent=Color3.fromRGB(197,59,59),Outline=Color3.fromRGB(24,25,24),Background=Color3.fromRGB(0,0,0),ElementBackground=Color3.fromRGB(6,6,6),TabButtonSelected=Color3.fromRGB(51,65,70),Unselected=Color3.fromRGB(75,72,72),TextColor=Color3.fromRGB(197,197,197),ToggleCircleUnselected=Color3.fromRGB(70,85,87),ToggleBackgroundUnselected=Color3.fromRGB(12,13,13),GradientTop=Color3.fromRGB(14,16,16),GradientMid=Color3.fromRGB(6,6,6),GradientDark=Color3.fromRGB(3,3,3),GradientDeep=Color3.fromRGB(0,0,0),TabHighlight=Color3.fromRGB(51,65,70),TabShadow=Color3.fromRGB(30,51,61)};end
+local function fn35()return{Accent=Color3.fromRGB(154,213,222),Outline=Color3.fromRGB(24,25,24),Background=Color3.fromRGB(0,0,0),ElementBackground=Color3.fromRGB(6,6,6),TabButtonSelected=Color3.fromRGB(51,65,70),Unselected=Color3.fromRGB(75,72,72),TextColor=Color3.fromRGB(197,197,197),ToggleCircleUnselected=Color3.fromRGB(70,85,87),ToggleBackgroundUnselected=Color3.fromRGB(12,13,13),GradientTop=Color3.fromRGB(14,16,16),GradientMid=Color3.fromRGB(6,6,6),GradientDark=Color3.fromRGB(3,3,3),GradientDeep=Color3.fromRGB(0,0,0),TabHighlight=Color3.fromRGB(51,65,70),TabShadow=Color3.fromRGB(30,51,61)};end
 
 tbl17.z = function()
 local z = tbl17.cache.z
@@ -3401,7 +3374,6 @@ instance.CanvasSize = UDim2.fromOffset(0, 0)
 instance.ScrollBarImageTransparency = 0.35
 instance.ScrollBarThickness = v86[186]
 instance.Selectable = false
-instance.TextEditable = true
 arg.Batch:Bind(instance, "ScrollBarImageColor3", "Accent")
 instance.Parent = root
 local instance2 = Instance.new(v86[128])
@@ -17675,7 +17647,7 @@ return {}
 end
 
 local v123 = fn39()
-local v124 = v120:AddTextBox({ Label = "Config Name", FocusLostOnly = true })
+local v124 = v120:AddTextBox({ Label = "Config Name" })
 local v125 = v120:AddButton({ Label = "Create Config" })
 local v126 = v120:AddList({ Label = "Configs", Options = v123, Height = 140, Search = true })
 
@@ -17684,26 +17656,16 @@ v126:SetOptions(fn39())
 end
 
 v125:Connect(v125.Clicked, function()
-    local raw = v124.Value
-    if type(raw) ~= "string" then
-        raw = ""
-    end
-    local str7 = raw:gsub("%s+", "")
-    if str7 == "" then
-        return
-    end
+local str7 = v124.Value:gsub("%s+", "")
+if str7 == "" then
+return
+end
 
-    local persistence = arg:GetPersistence()
-    if persistence == nil then
-        v116.get():Notify("Config system not ready")
-        return
-    end
-
-    if fn37(persistence:CreateDefault(str7), "Creating config") then
-        return
-    end
-    fn40()
-    v126:Set(str7)
+if fn37(persistence:CreateDefault(str7), "Creating config") then
+return
+end
+fn40()
+v126:Set(str7)
 end)
 
 local v127 = v120:AddButton({ Label = "Refresh List" })
@@ -17922,7 +17884,7 @@ return { Page = v120, Grid = v121 }
 end
 
 local function fn40(arg, arg2, arg3)
-arg:AddToggle({Label = "Re-run After Teleport",Config = arg3})
+arg:AddToggle({ Label = "Re-run After Teleport", Config = arg3 })
 local stateData = arg2:GetStateData()
 
 arg:AddToggle({
@@ -19913,7 +19875,7 @@ return bi.c
 end
 end
 do -- bj
-local function fn35() tbl17 .a5();return{ColorAnimations={Entries= tbl17 .i().atomic({})},Notifications={Enabled=true,Side="TopLeft",Size=15,Font="Inconsolata",Offset=0},Theme={Accent=Color3.fromRGB(197,59,59),Outline=Color3.fromRGB(24,25,24),Background=Color3.fromRGB(0,0,0),ElementBackground=Color3.fromRGB(6,6,6),TabButtonSelected=Color3.fromRGB(51,65,70),Unselected=Color3.fromRGB(75,72,72),TextColor=Color3.fromRGB(197,197,197),ToggleCircleUnselected=Color3.fromRGB(70,85,87),ToggleBackgroundUnselected=Color3.fromRGB(12,13,13)},AutoExecuteScript={Enabled=false}};end
+local function fn35() tbl17 .a5();return{ColorAnimations={Entries= tbl17 .i().atomic({})},Notifications={Enabled=true,Side="TopLeft",Size=15,Font="Inconsolata",Offset=0},Theme={Accent=Color3.fromRGB(154,213,222),Outline=Color3.fromRGB(24,25,24),Background=Color3.fromRGB(0,0,0),ElementBackground=Color3.fromRGB(6,6,6),TabButtonSelected=Color3.fromRGB(51,65,70),Unselected=Color3.fromRGB(75,72,72),TextColor=Color3.fromRGB(197,197,197),ToggleCircleUnselected=Color3.fromRGB(70,85,87),ToggleBackgroundUnselected=Color3.fromRGB(12,13,13)},AutoExecuteScript={Enabled=false}};end
 
 tbl17.bj = function()
 local bj = tbl17.cache.bj
@@ -21650,7 +21612,7 @@ return (v117:Add(v115.new({
 DefaultConfig = tbl17.bm(),
 CurrentVersion = 17,
 LegacyVersion = 1,
-SavePath = "kiciahook/rivals_v3/configs/",
+SavePath = "kiciarebuild/rivals/configs/",
 Migrations = tbl17.bF(),
 Serialize = v116.normalize,
 Deserialize = v118.deserialize,
@@ -29503,7 +29465,7 @@ index2.GetTargets = function(l)return l._enemyByPlayer;end
 index2.PreScan = function(I)I._shooterPosition= v117 ().Position;end
 index2.TargetMeetsConditions = function(I,W)if not W.Character.State.Alive then return false;end;local N=I._conditions;if N.Vulnerable and(W:IsInvincible())then return false;end;local P=I._innerContext;if P~=nil then local a=P.ItemBehaviors:GetEquipped();if a~=nil and( v115 .isShielded(a,W,I._shooterPosition,N.NotDeflecting,N.NotShielded))then return false;end;end;return true;end
 index2.HitboxMeetsConditions = function(l,I,W)return l._hitboxMeetsConditions(l._shooterPosition,I,W);end
-index2.ResolveHitboxes=function(l,I)local W=I and I.Character and I.Character.State;if not W or not W.Humanoid then return{}end;local I,N,P=W.TargetPartsByName,W.Humanoid:GetState()==Enum.HumanoidStateType.Freefall and l._hitboxes.Air or l._hitboxes.Ground,l._resolvedHitboxes;table.clear(P);for l in N,nil,nil do if I[l] then table.insert(P,I[l])end end;return P;end
+index2.ResolveHitboxes = function(l,I)local W=I.Character.State;local I,N,P=W.TargetPartsByName,W.Humanoid:GetState()==Enum.HumanoidStateType.Freefall and l._hitboxes.Air or l._hitboxes.Ground,l._resolvedHitboxes;table.clear(P);for l in N,nil,nil do table.insert(P,I[l]);end;return P;end
 return index2
 end
 
@@ -42128,7 +42090,7 @@ _configManager = v115.new({
 DefaultConfig = v120,
 CurrentVersion = v86[56],
 Migrations = { fn36 },
-SavePath = "kiciahook/rivals_v3/cosmetics/states",
+SavePath = "kiciarebuild/rivals/cosmetics",
 Deserialize = fn38,
 }),
 _stateConfig = v119,
@@ -60438,7 +60400,7 @@ return je.c
 end
 end
 do -- jf
-local function fn35()local I,W= tbl17 .bG(), tbl17 .aE(); tbl17 .hN();local N,P,a,e,c,E,p,T= tbl17 .h_(), tbl17 .ij(), tbl17 .ip(), tbl17 .n(), tbl17 .iw(), tbl17 .i_(), tbl17 .je(),cloneref(game:GetService("Players")).LocalPlayer;return function(l)if getgenv().KhForceMobileUi==true then W.ForceMobileLayout();end;local t=W.Menu.new({Icon=K.LithiumLogo,Title=string.format("Crack by Zo5yn on Discord | Rivals | %s",tostring("Premium Build")),Directory="kiciarebuild/rivals",Config=l.ReactiveStoreAdapter,ColorAnimation=l.ColorAnimation,Persistence=I,State=l.GeneralState,StateData=l.GeneralStateData,OnUnload=function()e:Destroy();end});e:Add(t);local I=l.PlayerIdentities;t:SetWatermarkUsername(I:GetPresented(T));e:Connect(I.IdentityChanged,function(W)if W==T then t:SetWatermarkUsername(I:GetPresented(T));end;end);P(l,t);E(l,t);c(l,t);N(l,t);p(l,t);a(l,t);t:AddSettingsTab();t:SetVisible(not(l.GeneralStateData.SilentLoad==true),true);end;end
+local function fn35()local I,W= tbl17 .bG(), tbl17 .aE(); tbl17 .hN();local N,P,a,e,c,E,p,T= tbl17 .h_(), tbl17 .ij(), tbl17 .ip(), tbl17 .n(), tbl17 .iw(), tbl17 .i_(), tbl17 .je(),cloneref(game:GetService("Players")).LocalPlayer;return function(l)if getgenv().KhForceMobileUi==true then W.ForceMobileLayout();end;local t=W.Menu.new({Icon=K.LithiumLogo,Title=string.format("KiciaHook | Rivals | %s",tostring("Premium Build")),Directory="kiciarebuild/rivals",Config=l.ReactiveStoreAdapter,ColorAnimation=l.ColorAnimation,Persistence=I,State=l.GeneralState,StateData=l.GeneralStateData,OnUnload=function()e:Destroy();end});e:Add(t);local I=l.PlayerIdentities;t:SetWatermarkUsername(I:GetPresented(T));e:Connect(I.IdentityChanged,function(W)if W==T then t:SetWatermarkUsername(I:GetPresented(T));end;end);P(l,t);E(l,t);c(l,t);N(l,t);p(l,t);a(l,t);t:AddSettingsTab();t:SetVisible(not(l.GeneralStateData.SilentLoad==true),true);end;end
 
 tbl17.jf = function()
 local jf = tbl17.cache.jf
@@ -62701,6 +62663,19 @@ local fallbackBaseRadius = projectileBreaker.FallbackBaseRadius
 local n = fallbackBaseRadius + fallbackBaseRadius * projectileBreaker.FallbackRadiusRandomFactor
 local position = arg.Position
 local v121 = v117(projectileBreaker.FallbackAnchorFromCharacter and position or Vector3.new(v86[186], position.Y, v86[186]), fallbackBaseRadius, n)
+
+if game.PlaceId == 17625359962 then
+    local jx = (v120:NextNumber() - 0.5) * 6
+    local jz = (v120:NextNumber() - 0.5) * 6
+    local yOff = -(3 + v120:NextNumber() * 5)
+    local t = Vector3.new(
+        v121.Position.X + jx,
+        v121.Position.Y + yOff,
+        v121.Position.Z + jz
+    )
+    return CFrame.new(t, t + arg.LookVector)
+end
+
 local v122 = v120:NextInteger(v86[63], 3)
 local position2 = v121.Position
 local x = position2.X
@@ -62717,7 +62692,6 @@ end
 
 return v121 - position2 + Vector3.new(x, y, z)
 end
-
 local index2 = {}
 index2.__index = index2
 
@@ -62880,27 +62854,48 @@ local v115 = tbl17.bG()
 local v116 = tbl17.jF()
 local v117 = Random.new()
 
+local hvH_lockX = nil
+local hvH_lockY = nil
+local hvH_lockZ = nil
+local hvH_lockTime = 0
+
 return { compute = function(arg)
-local random2 = v115.Data.Ragebot.Evasion.Random
-local baseRadius = random2.BaseRadius
-local n = baseRadius + baseRadius * random2.RadiusRandomFactor
-local position = arg.Position
-local v118 = v116(random2.AnchorFromCharacter and position or Vector3.new(0, position.Y, 0), baseRadius, n)
-local v119 = v117:NextInteger(v86[63], 3)
-local position2 = v118.Position
-local x = position2.X
-local y = position2.Y
-local z = position2.Z
+    local playerPos = arg.Position
 
-if v119 == 1 then
-x = 1073741824
-elseif v119 == 2 then
-y = 1073741824
-else
-z = 1073741824
-end
+    if game.PlaceId ~= 17625359962 then
+        local random2 = v115.Data.Ragebot.Evasion.Random
+        local baseRadius = random2.BaseRadius
+        local n = baseRadius + baseRadius * random2.RadiusRandomFactor
+        local v118 = v116(random2.AnchorFromCharacter and playerPos or Vector3.new(0, playerPos.Y, 0), baseRadius, n)
+        local v119 = v117:NextInteger(v86[63], 3)
+        local p2 = v118.Position
+        local x, y, z = p2.X, p2.Y, p2.Z
+        if v119 == 1 then x = 1073741824
+        elseif v119 == 2 then y = 1073741824
+        else z = 1073741824 end
+        return v118 - p2 + Vector3.new(x, y, z)
+    end
 
-return v118 - position2 + Vector3.new(x, y, z)
+    local now = os.clock()
+    if hvH_lockX == nil or now - hvH_lockTime > 0.15 then
+        hvH_lockX = playerPos.X
+        hvH_lockY = playerPos.Y
+        hvH_lockZ = playerPos.Z
+        hvH_lockTime = now
+    end
+
+    local jitterX = (v117:NextNumber() - 0.5) * 6   -- -3..+3
+    local jitterZ = (v117:NextNumber() - 0.5) * 6   -- -3..+3
+
+    local yOff = -(3 + v117:NextNumber() * 5)       -- -3..-8
+
+    local targetPos = Vector3.new(
+        hvH_lockX + jitterX,
+        hvH_lockY + yOff,
+        hvH_lockZ + jitterZ
+    )
+
+    return CFrame.new(targetPos, targetPos + arg.LookVector)
 end }
 end
 
@@ -63002,8 +62997,11 @@ local v116 = tbl17.jF()
 local v117 = cloneref(game:GetService("CollectionService"))
 
 return { compute = function(arg, arg2)
+if game.PlaceId == 17625359962 then
+    return CFrame.new(arg.Position)
+end
 if not arg2 then
-return v116(arg.Position, 10000, 1e9)
+return v116(arg.Position, 10, 60)
 end
 local v118 = nil
 
@@ -66447,11 +66445,10 @@ do
         local path = "kiciarebuild/lithium_logo.png"
         local ok = pcall(wrf, path, decode(LITHIUM_LOGO_B64))
         local ok2, id = pcall(gca, path)
-        --  Kicia's original logo is used; the Lithium one is no longer applied.
+        if ok and ok2 and type(id) == "string" and id ~= "" then K.LithiumLogo = id end
     end
 end
 
---  Kicia's error reporter needs a sink; ours prints to the F9 console.
 tbl17.b().use({ Report = function(_, e)
     local detail = type(e) == "table" and (e.Detail or e.Operation) or e
     warn("[Kicia Rebuild] " .. tostring(detail))
