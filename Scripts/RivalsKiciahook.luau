@@ -1,7 +1,7 @@
 --[[
 Made by Zo5yn on Discord
 Run:
-local url="https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau";local src=(pcall(function()return game:HttpGetAsync(url,true)end)and game:HttpGetAsync(url,true))or game:HttpGet(url,true);local fn,err=loadstring(src);if err then error(err)end;if fn then fn()end
+local url="https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/RivalsKiciahook.luau";local src=(pcall(function()return game:HttpGetAsync(url,true)end)and game:HttpGetAsync(url,true))or game:HttpGet(url,true);local fn,err=loadstring(src);if err then error(err)end;if fn then fn()end
 Changelogs:
  Added AC Bypass
  Fixed errors
@@ -66533,7 +66533,7 @@ local function on_queue()
         return
     end
 
-    q([[local url="https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/Rivals.luau";local src=(pcall(function()return game:HttpGetAsync(url,true)end)and game:HttpGetAsync(url,true))or game:HttpGet(url,true);local fn,err=loadstring(src);if err then error(err)end;if fn then fn()end]])
+    q([[local url="https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/RivalsKiciahook.luau";local src=(pcall(function()return game:HttpGetAsync(url,true)end)and game:HttpGetAsync(url,true))or game:HttpGet(url,true);local fn,err=loadstring(src);if err then error(err)end;if fn then fn()end]])
 end
 
 task.defer(on_queue)
