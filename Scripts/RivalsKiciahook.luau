@@ -96,31 +96,13 @@ end)
 
 task.wait(4)
 
-if not game:IsLoaded() then
-    game.Loaded:Wait()
-end
-
-local Players = game:GetService("Players")
-local lp = Players.LocalPlayer or Players.PlayerAdded:Wait()
-
-local deadline = os.clock() + 60
-repeat
-    local pg = lp:FindFirstChild("PlayerGui")
-    local loading = pg and pg:FindFirstChild("LoadingScreen")
-    if not loading then
-        break
-    end
-    task.wait(0.25)
-until os.clock() > deadline
-
-task.wait(7)
-
 if getgenv().Kiciahook and getgenv().Kiciahook.Unload then
     pcall(getgenv().Kiciahook.Unload)
 end
 if not game:IsLoaded() then game.Loaded:Wait() end
+print("[Kicia] script file executing, PlaceId=" .. tostring(game.PlaceId))
 
-local K = { connections = {}, cleanups = {}, destroyed = false }
+local K: { [string]: any } = { connections = {}, cleanups = {}, destroyed = false }
 getgenv().Kiciahook = K
 
 local Players = game:GetService("Players")
@@ -4990,11 +4972,15 @@ textBox.ClearTextOnFocus = false
 textBox.FontFace = v117.SemiBold
 textBox.TextColor3 = v122.get("TextColor")
 textBox.Text = ""
-textBox.AnchorPoint = Vector2.new(v86[186], v86[101])
+textBox.AnchorPoint = Vector2.new(0, 0)
 textBox.BorderSizePixel = 0
 textBox.BackgroundTransparency = 1
 textBox.Position = UDim2.new(0, v86[175], 0.5, 0)
 textBox.AutomaticSize = Enum.AutomaticSize.XY
+textBox.Position = UDim2.new(0, 0, 0, 0)
+textBox.Size = UDim2.new(1, 0, 1, 0)
+textBox.AutomaticSize = Enum.AutomaticSize.None
+textBox.TextXAlignment = Enum.TextXAlignment.Left
 textBox.TextSize = v86[13]
 textBox.Selectable = false
 textBox.Active = true
@@ -5033,6 +5019,12 @@ uiPadding.Parent = textBox
 instance3 = nil
 end
 
+frame.Active = true
+frame.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+task.defer(function() textBox:CaptureFocus() end)
+end
+end)
 return frame, textBox, instance3
 end
 
@@ -5869,7 +5861,30 @@ v118.connectClick(trove, v135, function()
 arg5.RemoveStop()
 end)
 
-local function repaint(...) end
+local function repaint(snap)
+local hueColor = Color3.fromHSV(arg3.Hue, 1, 1)
+frame4.BackgroundColor3 = hueColor
+frame7.Position = UDim2.new(arg3.Sat, 0, 1 - arg3.Val, 0)
+frame7.BackgroundColor3 = arg3.Color
+instance8.Position = UDim2.new(0.5, 0, arg3.Hue, 0)
+frame14.Position = UDim2.new(0.5, 0, arg3.Alpha, 0)
+frame14.BackgroundColor3 = arg3.Color
+instance10.BackgroundColor3 = arg3.Color
+if arg3.Mode == v86[90] then
+_fn42(snap)
+else
+frame21.BackgroundColor3 = arg3.Color
+end
+if v132 ~= nil and not v132:IsFocused() then
+v132.Text = arg3.Color:ToHex()
+end
+if v131 ~= nil and not v131:IsFocused() then
+v131.Text = tostring(math.floor((1 - arg3.Alpha) * 100 + 0.5))
+end
+if _v133 ~= nil then
+_v133.BackgroundColor3 = arg3.Color
+end
+end
 tbl22.Repaint = repaint
 
 return {
@@ -9572,8 +9587,10 @@ instance.AnchorPoint = Vector2.new(0, 0.5)
 instance.BorderSizePixel = 0
 instance.BackgroundTransparency = v86[63]
 instance.Position = UDim2.new(0, 5, v86[101], 0)
-instance.AutomaticSize = Enum.AutomaticSize.XY
+instance.Size = UDim2.new(1, -10, 1, 0)
+instance.AutomaticSize = Enum.AutomaticSize.None
 instance.TextSize = v86[13]
+instance.TextXAlignment = Enum.TextXAlignment.Left
 instance.Selectable = v86[153]
 instance.Active = v86[34]
 arg2.Batch:Bind(instance, "TextColor3", "TextColor")
@@ -9583,6 +9600,12 @@ uiPadding.PaddingRight = UDim.new(0, v86[175])
 uiPadding.PaddingLeft = UDim.new(0, 1)
 uiPadding.Parent = instance
 arg._rt = { Outline = frame, Input = instance }
+frame.Active = true
+arg2.Trove:Connect(frame.InputBegan, function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+task.defer(function() instance:CaptureFocus() end)
+end
+end)
 local tweenInfo = TweenInfo.new(0.05, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, v86[186], false, 0)
 
 local function fn36(arg3)
@@ -9590,7 +9613,12 @@ if instance.TextSize ~= 16 then
 instance.TextSize = 16
 end
 
-local x = instance.AbsoluteSize.X
+local _tbp = Instance.new("GetTextBoundsParams")
+_tbp.Text = instance.Text
+_tbp.Size = 16
+_tbp.Font = instance.FontFace
+_tbp.Width = 100000
+local x = game:GetService("TextService"):GetTextBoundsAsync(_tbp).X
 
 if arg.MaxWidth < x then
 instance.TextSize = math.max(math.floor(v86[13] * arg.MaxWidth / x), 8)
@@ -17314,6 +17342,7 @@ Offset = v118.appendPath(arg2, "Offset"),
 ThemeAccent = v118.appendPath(arg3, "Accent"),
 ThemeBackground = v118.appendPath(arg3, "Background"),
 ThemeText = v118.appendPath(arg3, "TextColor"),
+TextColor = v118.appendPath(arg3, "TextColor"),
 },
 _resolveFont = arg4,
 _container = frame,
@@ -17388,7 +17417,9 @@ return tbl20
 end
 
 index2._Get = function(arg, arg2)
-return arg._config:Get(arg._pathByKey[arg2], true)
+local _p = arg._pathByKey[arg2]
+if _p == nil then return nil end
+return arg._config:Get(_p, true)
 end
 
 index2._SideSpec = function(arg)
@@ -19037,13 +19068,34 @@ if v116 == nil then
 return nil
 end
 else
-v116 = arg:WaitForChild(v115, math.huge)
+local _t0 = os.clock()
+while true do
+v116 = arg:WaitForChild(v115, 5)
+if v116 ~= nil then
+break
+end
+print("[Kicia] waiting for " .. arg:GetFullName() .. " -> " .. tostring(v115) .. " (" .. math.floor(os.clock() - _t0) .. "s)")
+if os.clock() - _t0 > 60 then
+error("[Kicia] timed out waiting for " .. arg:GetFullName() .. " -> " .. tostring(v115) .. ". Wrong game? This script is built for Rivals.", 2)
+end
+end
 end
 
 arg = cloneref(v116)
 end
 
 if arg3 then
+local _ok, _res = pcall(require, arg)
+if _ok then
+return _res
+end
+for _try = 1, 4 do
+task.wait(2)
+_ok, _res = pcall(require, arg)
+if _ok then
+return _res
+end
+end
 return require(arg)
 end
 return cloneref(arg)
@@ -66454,7 +66506,7 @@ tbl17.b().use({ Report = function(_, e)
     warn("[Kiciahook] " .. tostring(detail))
 end })
 
-local boot = (function()
+local bootFn = (function()
     local store = tbl17.bG()
     local profiles = GlobalTrove:Add(tbl17.bN().new(store))
     store:UseMiddleware(profiles)
@@ -66503,7 +66555,7 @@ local boot = (function()
         GeneralState = state,
         GeneralStateData = stateData,
     }
-end)()
+end
 
 function K.Unload()
     if K.destroyed then return end
@@ -66513,41 +66565,61 @@ function K.Unload()
     if getgenv().Kiciahook == K then getgenv().Kiciahook = nil end
 end
 
-tbl17.j1()(boot)
-
-local store = tbl17.bG()
-
-local function queue_teleport()
-    return (K.fn and K.fn("queue_on_teleport")) or queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport) or (K.fn and K.fn("queueonteleport"))
+- (autoexec fix: game controller modules error when required before the
+-- game finishes replicating them, so wait for Controllers before booting)
+task.spawn(function()
+local _players = game:GetService("Players")
+local _wt0 = os.clock()
+while not _players.LocalPlayer and os.clock() - _wt0 < 60 do task.wait() end
+local _lp = _players.LocalPlayer
+if not _lp then warn("[Kicia] ABORTED: no LocalPlayer after 60s"); return end
+local _ps = _lp:FindFirstChild("PlayerScripts")
+if not _ps then
+pcall(function() _lp:WaitForChild("PlayerScripts", 60) end)
+_ps = _lp:FindFirstChild("PlayerScripts")
 end
-
-local function on_queue()
-    local enabled = store:Get({"AutoExecuteScript", "Enabled"})
-    if enabled ~= true then
-        return
-    end
-
-    local q = queue_teleport()
-    if type(q) ~= "function" then
-        warn("[Kiciahook] queue_on_teleport not available on this executor")
-        return
-    end
-
-    q([[local url="https://raw.githubusercontent.com/Zo5yn/UnpackedHub/refs/heads/main/Scripts/RivalsKiciahook.luau";local src=(pcall(function()return game:HttpGetAsync(url,true)end)and game:HttpGetAsync(url,true))or game:HttpGet(url,true);local fn,err=loadstring(src);if err then error(err)end;if fn then fn()end]])
+if not _ps then warn("[Kicia] ABORTED: no PlayerScripts"); return end
+local _ctrl = _ps:FindFirstChild("Controllers")
+if _ps and not _ctrl then
+print("[Kicia] waiting for PlayerScripts.Controllers ...")
+pcall(function() _ps:WaitForChild("Controllers", 30) end)
+_ctrl = _ps:FindFirstChild("Controllers")
 end
-
-task.defer(on_queue)
-
-pcall(function()
-    store:GetPropertyChangedSignal({"AutoExecuteScript", "Enabled"}):Connect(function(enabled)
-        if enabled == true then
-            on_queue()
-        end
-    end)
+if not _ctrl then
+warn("[Kicia] ABORTED: PlayerScripts.Controllers not found. This script is built for Rivals - remove it from autoexec if you are in a different game.")
+return
+end
+-- (no spawn gate: boot ASAP once data is ready)
+-- Adaptive fast boot: NO require() calls before boot (hands off the game's
+-- enum build). Boot as soon as the client looks alive: spawned + game HUD
+-- present. Usually seconds after join; 45s cap, then boot anyway.
+print("[Kicia] waiting for client to come alive ...")
+local _wt1 = os.clock()
+while os.clock() - _wt1 < 45 do
+local _ch = _lp.Character
+local _pg0 = _lp:FindFirstChild("PlayerGui")
+local _spawnedOk = _ch ~= nil and _ch:FindFirstChildOfClass("Humanoid") ~= nil
+local _uiOk = false
+if _pg0 then
+local _n = 0
+for _, _c in ipairs(_pg0:GetChildren()) do
+if _c:IsA("ScreenGui") then _n = _n + 1 end
+end
+_uiOk = _n >= 2
+end
+if _spawnedOk and _uiOk then break end
+task.wait(1)
+end
+print("[Kicia] client alive, booting ...")
+print("[Kicia] controllers ready, booting ...")
+tbl17.j1()(bootFn())
+task.spawn(function()
+task.wait(60)
+local _pg3 = _lp:FindFirstChild("PlayerGui")
+local _ls = _pg3 and _pg3:FindFirstChild("LoadingScreen")
+if _ls and _ls:IsA("LayerCollector") and _ls.Enabled then
+print("[Kicia] please rejoin it broke.")
+_ls.Enabled = false
+end
 end)
-
-pcall(function()
-    if store.Reloaded then
-        store.Reloaded:Connect(on_queue)
-    end
 end)
